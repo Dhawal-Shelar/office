@@ -1,0 +1,31 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm p-4">
+            <h4 class="mb-3">Enter your details for "{{ event.name }}"</h4>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label>First Name</label>
+                    <input type="text" name="fname" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Last Name</label>
+                    <input type="text" name="lname" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Mobile</label>
+                    <input type="text" name="mobile" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Email</label>
+                    <input type="email" name="email" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Submit & View Venues</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

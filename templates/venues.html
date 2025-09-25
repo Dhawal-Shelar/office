@@ -1,0 +1,21 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+
+<h3 class="mb-4">{{ event.name }} Venues</h3>
+
+<div class="row">
+    {% for venue in venues %}
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm">
+            {% if venue.image %}
+            <img src="{{ venue.image.url }}" class="card-img-top"> {% else %}
+            <img src="{% static 'images/placeholder.jpg' %}" class="card-img-top"> {% endif %}
+            <div class="card-body">
+                <h5>{{ venue.venue_name }}</h5>
+                <p>{{ venue.location }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+<div class="jumbotron text-center bg-light p-5 rounded mb-5">
+    <h1 class="display-4">Welcome to Our Events</h1>
+    <p class="lead">Explore all our upcoming events and book your participation.</p>
+</div>
+
+<div class="row" id="events-list">
+    {% for event in events %}
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm">
+            {% if event.image %}
+            <img src="{{ event.image.url }}" class="card-img-top"> {% else %}
+            <img src="{% static 'images/placeholder.jpg' %}" class="card-img-top"> {% endif %}
+            <div class="card-body">
+                <h5>{{ event.name }}</h5>
+                <p>{{ event.description|truncatewords:20 }}</p>
+                <a href="{% url 'visitor_login' event.id %}" class="btn btn-primary w-100">Continue</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
