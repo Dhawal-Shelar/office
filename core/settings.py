@@ -80,7 +80,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'eventdb',      # Your database name
         'USER': 'root',               # Your MySQL username
-        'PASSWORD': 'admin',   # The root password you set
+        'PASSWORD': 'root',   # The root password you set
         'HOST': '127.0.0.1',          # Localhost
         'PORT': '3306',               # Default MySQL port
     }

@@ -1,41 +1,108 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Core Project</title>
-    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-    <style>
-        body {
-            padding-top: 70px;
-        }
-    </style>
-</head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Travelsphere{% endblock %}</title>
 
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+<style>
+/* Hamburger Right-to-Left animation */
+.navbar-toggler-icon {
+  position: relative;
+  width: 30px;
+  height: 3px;
+  background-color: #fff;
+  display: block;
+  transition: all 0.3s ease;
+}
+.navbar-toggler-icon::before,
+.navbar-toggler-icon::after {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 3px;
+  background-color: #fff;
+  transition: all 0.3s ease;
+}
+.navbar-toggler-icon::before { top: -10px; }
+.navbar-toggler-icon::after { bottom: -10px; }
+
+.navbar-toggler.collapsed .navbar-toggler-icon {
+  transform: rotate(0);
+}
+.navbar-toggler:not(.collapsed) .navbar-toggler-icon {
+  transform: rotate(45deg);
+}
+.navbar-toggler:not(.collapsed) .navbar-toggler-icon::before {
+  transform: rotate(90deg);
+  top: 0;
+}
+.navbar-toggler:not(.collapsed) .navbar-toggler-icon::after {
+  opacity: 0;
+}
+</style>
+{% block extra_head %}{% endblock %}
+</head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'events_home' %}">CoreProject</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'events_home' %}">Events</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-gradient-orange sticky-top shadow-sm">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="{% url 'events_home' %}"><i class="bi bi-compass"></i> Travelsphere</a>
+    <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="{% url 'events_home' %}"><i class="bi bi-calendar-event"></i> Events</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'about' %}"><i class="bi bi-info-circle"></i> About</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'services' %}"><i class="bi bi-gear"></i> Services</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'contact' %}"><i class="bi bi-envelope"></i> Contact</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid">
+  <div class="row">
+    <!-- Sidebar -->
+    <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse position-fixed h-100">
+      <div class="position-sticky pt-3">
+        <ul class="nav flex-column text-white">
+          <li class="nav-item">
+            <a class="nav-link text-white" data-bs-toggle="collapse" href="#eventDropdown" role="button">
+              <i class="bi bi-calendar-event"></i> Events <i class="bi bi-chevron-down float-end"></i>
+            </a>
+            <ul class="collapse list-unstyled ms-3" id="eventDropdown">
+              {% for event in events %}
+              <li><a class="nav-link text-light" href="{% url 'information_view' event.id %}">{{ event.name }}</a></li>
+              {% endfor %}
+            </ul>
+          </li>
+          <li class="nav-item"><a class="nav-link text-white" href="{% url 'about' %}"><i class="bi bi-info-circle"></i> About</a></li>
+          <li class="nav-item"><a class="nav-link text-white" href="{% url 'services' %}"><i class="bi bi-gear"></i> Services</a></li>
+          <li class="nav-item"><a class="nav-link text-white" href="{% url 'contact' %}"><i class="bi bi-envelope"></i> Contact</a></li>
+        </ul>
+      </div>
     </nav>
 
-    <div class="container mt-4">
-        {% block content %}{% endblock %}
-    </div>
+    <!-- Main Content -->
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
 
-    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+<footer class="bg-gradient-orange text-white text-center py-4 mt-4">
+  <p class="mb-0">&copy; {{ year|default:"2025" }} Travelsphere. All rights reserved.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
 </body>
-
 </html>

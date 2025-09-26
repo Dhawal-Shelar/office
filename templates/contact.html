@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Contact – Travelsphere{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="text-center mb-5">
+    <h1 class="display-5 fw-bold text-orange">Get in Touch</h1>
+    <p class="lead text-muted">We’d love to hear from you! Fill out the form or use the info below.</p>
+  </div>
+
+  <div class="row g-4">
+    <!-- Contact Details -->
+    <div class="col-lg-5">
+      <div class="card shadow-lg p-4 h-100 bg-light-orange">
+        <h5 class="fw-bold mb-3 text-orange">Contact Information</h5>
+        <p><i class="bi bi-telephone text-orange"></i> +1 (555) 123-4567</p>
+        <p><i class="bi bi-envelope text-orange"></i> support@travelsphere.com</p>
+        <p><i class="bi bi-geo-alt text-orange"></i> 123 Main Street, New York, NY</p>
+        <hr>
+        <h6 class="fw-bold text-orange">Business Hours</h6>
+        <p>Mon – Fri: 9:00 AM – 6:00 PM</p>
+        <p>Sat: 10:00 AM – 4:00 PM</p>
+      </div>
+    </div>
+
+    <!-- Contact Form -->
+    <div class="col-lg-7">
+      <div class="card shadow-lg p-4 h-100">
+        <form method="post" action="#" onsubmit="return false;">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">Your Name</label>
+            <input type="text" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email Address</label>
+            <input type="email" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Message</label>
+            <textarea class="form-control" rows="5" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-outline-orange w-100">Send Message</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

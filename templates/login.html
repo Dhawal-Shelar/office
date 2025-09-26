@@ -1,31 +1,26 @@
-{% extends 'base.html' %} {% load static %} {% block content %}
-
-<div class="row justify-content-center">
-    <div class="col-md-6">
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
         <div class="card shadow-sm p-4">
-            <h4 class="mb-3">Enter your details for "{{ event.name }}"</h4>
+            <h3 class="mb-3 text-center text-orange">Login to Travelsphere</h3>
             <form method="POST">
                 {% csrf_token %}
                 <div class="mb-3">
-                    <label>First Name</label>
-                    <input type="text" name="fname" class="form-control" required>
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" class="form-control" required>
                 </div>
                 <div class="mb-3">
-                    <label>Last Name</label>
-                    <input type="text" name="lname" class="form-control" required>
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" required>
                 </div>
-                <div class="mb-3">
-                    <label>Mobile</label>
-                    <input type="text" name="mobile" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label>Email</label>
-                    <input type="email" name="email" class="form-control" required>
-                </div>
-                <button type="submit" class="btn btn-success w-100">Submit & View Venues</button>
+                <button type="submit" class="btn btn-gradient-primary w-100 mt-3">Login</button>
+                <p class="mt-3 text-center">
+                    Don't have an account? <a href="{% url 'signup' %}">Sign up</a>
+                </p>
             </form>
         </div>
     </div>
 </div>
-
 {% endblock %}

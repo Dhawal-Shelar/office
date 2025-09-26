@@ -1,20 +1,218 @@
+/* ===== General ===== */
+
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f8f9fa;
-    margin: 0;
-    padding: 0;
+    background: #f0f2f5;
+    font-family: 'Poppins', sans-serif;
 }
 
-.navbar-brand {
-    font-weight: bold;
-    font-size: 1.5rem;
+
+/* ===== Navbar ===== */
+
+.bg-gradient-orange {
+    background: linear-gradient(135deg, #ff7f50, #ff4500) !important;
 }
 
-.card {
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.navbar-dark .navbar-nav .nav-link {
+    color: #fff;
 }
 
-button {
-    cursor: pointer;
+.navbar-dark .navbar-nav .nav-link:hover {
+    color: #ffe0d0;
+}
+
+
+/* ===== Sidebar ===== */
+
+#sidebarMenu {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    bottom: 0;
+    width: 220px;
+    background-color: #2b2b2b;
+    /* Darker background */
+    overflow-y: auto;
+    padding-top: 1rem;
+    z-index: 1020;
+}
+
+#sidebarMenu .nav-link {
+    color: #f8f9fa;
+    /* White text */
+    transition: background 0.3s, color 0.3s;
+    border-radius: 0.5rem;
+}
+
+#sidebarMenu .nav-link:hover,
+#sidebarMenu .nav-link.active {
+    background: #3a3a3a;
+    /* Slightly lighter shade on hover */
+    color: #ff7f50;
+    /* Orange highlight */
+}
+
+main {
+    margin-left: 220px;
+    padding: 2rem 1rem;
+}
+
+@media (max-width: 992px) {
+    #sidebarMenu {
+        position: relative;
+        width: 100%;
+        height: auto;
+        top: 0;
+    }
+    main {
+        margin-left: 0;
+    }
+}
+
+
+/* ===== Event Cards ===== */
+
+.event-card {
+    background: #e0e0e0;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.event-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+}
+
+.event-card .card-body {
+    color: #333;
+}
+
+
+/* ===== Hero Carousel ===== */
+
+#heroCarousel .carousel-item::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1;
+}
+
+#heroCarousel .carousel-caption {
+    position: absolute;
+    z-index: 2;
+    color: #fff;
+}
+
+
+/* ===== Reviews Section (NO rotation now) ===== */
+
+.review-carousel-wrapper {
+    width: 100%;
+    padding: 2rem 0;
+}
+
+.review-carousel {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.review-card {
+    width: 220px;
+    background: #d9d9d9;
+    padding: 1rem;
+    border-radius: 1rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.review-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.review-card img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-bottom: 0.5rem;
+}
+
+
+/* ===== Buttons ===== */
+
+.btn-outline-orange {
+    border: 2px solid #ff7f50;
+    color: #ff4500;
+    transition: all 0.3s;
+}
+
+.btn-outline-orange:hover {
+    background: linear-gradient(90deg, #ff7f50, #ff4500);
+    color: #fff;
+}
+
+
+/* ===== About Hero ===== */
+
+.about-hero {
+    position: relative;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.about-hero img {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    border-radius: 1rem;
+}
+
+.about-hero .hero-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+
+/* ===== Responsive tweaks ===== */
+
+@media (max-width: 768px) {
+    main {
+        padding: 1rem;
+    }
+    .event-card {
+        margin-bottom: 1rem;
+    }
+}
+
+
+/* === Theme Helpers === */
+
+.text-orange {
+    color: #ff4500;
+}
+
+.bg-light-orange {
+    background: #fff4f0;
+}
+
+.card.bg-light-orange {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card.bg-light-orange:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
