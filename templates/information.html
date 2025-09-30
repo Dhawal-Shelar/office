@@ -1,93 +1,112 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Request Info{% endblock %}
+{% load custom_tags %}
+{% block title %}Request Info - {{ event.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.bg-gradient-orange {
+    background: linear-gradient(90deg, #ff7e5f, #feb47b);
+}
+.btn-outline-orange {
+    border-color: #ff7e5f;
+    color: #ff7e5f;
+}
+.btn-outline-orange:hover {
+    background-color: #ff7e5f;
+    color: #fff;
+}
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+.carousel-item img {
+    cursor: pointer;
+}
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="container py-4">
 
-<div class="container py-5">
+    <!-- HERO CAROUSEL FOR ALL EVENTS -->
+    <div id="eventsHeroCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            {% for e in events %}
+            <div class="carousel-item {% if e.id == event.id %}active{% endif %}">
+                {% if e.image %}
+                <img src="{{ e.image.url }}" class="d-block w-100" alt="{{ e.name }}" data-event-name="{{ e.name }}">
+                {% else %}
+                <img src="{% static 'images/placeholder.jpg' %}" class="d-block w-100" alt="{{ e.name }}" data-event-name="{{ e.name }}">
+                {% endif %}
+                <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-2">
+                    <h5>{{ e.name }}</h5>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#eventsHeroCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#eventsHeroCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+
     <div class="row g-4">
-        <!-- Form Column -->
+        <!-- LEFT: Booking Form -->
         <div class="col-lg-6">
-            <div class="card bg-dark text-white shadow-sm">
-                <div class="card-header bg-gradient-orange text-white">
-                    <h3 class="card-title mb-0">{{ event.name }} - Booking Info</h3>
+            <div class="card shadow-sm card-hover bg-dark text-white">
+                <div class="card-header bg-gradient-orange">
+                    <h3 class="mb-0" id="eventNameHeader">{{ event.name }} - Booking Info</h3>
                 </div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
+                        <input type="hidden" name="requisition_id" value="{{ requisition.id|default_if_none:'' }}">
+                        <input type="hidden" name="visitor_id" value="{{ visitor.id|default_if_none:'' }}">
+                        <input type="hidden" name="event_id" value="{{ event.id }}">
+
                         <div class="mb-3">
                             <label class="form-label">Your Name *</label>
-                            <input type="text" name="visitor_name" class="form-control" required>
+                            <input type="text" name="visitor_name" class="form-control" value="{{ requisition.visitor_name|default:'' }}" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Phone *</label>
-                            <input type="tel" name="phone" class="form-control" required>
+                            <input type="tel" name="phone" class="form-control" value="{{ requisition.phone|default:'' }}" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Email</label>
-                            <input type="email" name="email" class="form-control">
+                            <input type="email" name="email" class="form-control" value="{{ requisition.email|default:'' }}">
                         </div>
-                        <div class="row g-3">
-                            <div class="col-md-4">
+
+                        <div class="row g-3 mt-3">
+                            <div class="col-md-6">
                                 <label class="form-label">Number of People</label>
-                                <input type="number" name="number_of_people" class="form-control">
+                                <input type="number" name="number_of_people" class="form-control" value="{{ requisition.number_of_people|default:'' }}">
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Tables</label>
-                                <input type="number" name="tables" class="form-control">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Chairs</label>
-                                <input type="number" name="chairs" class="form-control">
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Balloons</label>
-                                <input type="number" name="balloons" class="form-control">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Garlands</label>
-                                <input type="number" name="garlands" class="form-control">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Stereo</label>
-                                <select name="stereo" class="form-select">
-                                    <option value="0">No</option>
-                                    <option value="1">Yes</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Mic</label>
-                                <select name="mic" class="form-select">
-                                    <option value="0">No</option>
-                                    <option value="1">Yes</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Venue Type</label>
-                                <input type="text" name="venue_type" class="form-control">
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-3">
                             <div class="col-md-6">
                                 <label class="form-label">Budget</label>
-                                <input type="text" name="budget" class="form-control">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Religious Affiliation</label>
-                                <input type="text" name="religious_affiliation" class="form-control">
+                                <input type="text" name="budget" class="form-control" value="{{ requisition.budget|default:'' }}">
                             </div>
                         </div>
 
                         <div class="mb-3 mt-3">
+                            <label class="form-label">Religious Affiliation</label>
+                            <input type="text" name="religious_affiliation" class="form-control" value="{{ requisition.religious_affiliation|default:'' }}">
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label">Special Requests</label>
-                            <textarea name="special_requests" class="form-control" rows="4"></textarea>
+                            <textarea name="special_requests" class="form-control" rows="4">{{ requisition.special_requests|default:'' }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Venue Type</label>
+                            <a href="{% url 'venue_view' %}?event_id={{ event.id }}" class="btn btn-outline-orange w-100">
+                                Choose / Change Venue
+                            </a>
                         </div>
 
                         <button type="submit" class="btn btn-outline-orange w-100">Submit Request</button>
@@ -96,16 +115,16 @@
             </div>
         </div>
 
-        <!-- Map / Venue Column -->
+        <!-- RIGHT: Map / Selected Venue -->
         <div class="col-lg-6">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm card-hover">
                 <div class="card-header bg-gradient-orange text-white">
-                    <h3 class="card-title mb-0">Wedding Location</h3>
+                    <h3 class="mb-0">Event Location</h3>
                 </div>
                 <div class="card-body p-0">
                     <div class="ratio ratio-16x9">
                         <iframe 
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.184052376362!2d-73.98761492453416!3d40.75831467138828!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25855b8fb3083%3A0xa0f9aef176042a5c!2sGrand%20Hyatt%20New%20York!5e0!3m2!1sen!2sus!4v1700000000000!5m2!1sen!2sus" 
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.184052376362!2d-73.98761492453416!3d40.75831467138828!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25855b8fb3083%3A0xa0f9aef176042a5c!2sGrand%20Hyatt%20New%20York!5e0!3m2!1sen!2sus!4v1700000000000" 
                             allowfullscreen="" 
                             loading="lazy">
                         </iframe>
@@ -113,7 +132,24 @@
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 
+<!-- JS to update event name when carousel slide clicked -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const slides = document.querySelectorAll('#eventsHeroCarousel .carousel-item img');
+    const header = document.getElementById('eventNameHeader');
+
+    slides.forEach(slide => {
+        slide.addEventListener('click', function() {
+            const name = this.getAttribute('data-event-name');
+            if (name) {
+                header.textContent = name + ' - Booking Info';
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

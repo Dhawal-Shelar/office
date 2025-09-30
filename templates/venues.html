@@ -1,21 +1,178 @@
-{% extends 'base.html' %} {% load static %} {% block content %}
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Choose Venue{% endblock %}
 
-<h3 class="mb-4">{{ event.name }} Venues</h3>
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+.btn-outline-orange {
+    border-color: #ff7e5f;
+    color: #ff7e5f;
+}
+.btn-outline-orange:hover {
+    background-color: #ff7e5f;
+    color: #fff;
+}
+.text-decoration-line-through {
+    text-decoration: line-through;
+}
+#venueMap { height: 400px; width: 100%; }
+</style>
+{% endblock %}
 
-<div class="row">
-    {% for venue in venues %}
-    <div class="col-md-4 mb-3">
-        <div class="card shadow-sm">
-            {% if venue.image %}
-            <img src="{{ venue.image.url }}" class="card-img-top"> {% else %}
-            <img src="{% static 'images/placeholder.jpg' %}" class="card-img-top"> {% endif %}
-            <div class="card-body">
-                <h5>{{ venue.venue_name }}</h5>
-                <p>{{ venue.location }}</p>
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- SEARCH BAR -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <form method="get" class="d-flex">
+                <input type="text" name="q" class="form-control me-2"
+                       placeholder="Search by venue name, city, or area"
+                       value="{{ request.GET.q }}">
+                <button type="submit" class="btn btn-outline-orange">Search</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- LEFT: Venue Grid -->
+        <div class="col-lg-8">
+            <div class="row g-4">
+                {% for venue in venues %}
+                <div class="col-md-4">
+                    <div class="card shadow-sm h-100 card-hover">
+                        {% if venue.image %}
+                        <img src="{{ venue.image.url }}" class="card-img-top" style="height:150px; object-fit:cover;">
+                        {% else %}
+                        <img src="{% static 'images/placeholder.jpg' %}" class="card-img-top" style="height:150px; object-fit:cover;">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ venue.name }}</h5>
+                            <p class="card-text">{{ venue.location }}{% if venue.area %}, {{ venue.area }}{% endif %}</p>
+                            <p class="mb-1">
+                                <span class="text-muted text-decoration-line-through">
+                                    ₹{{ venue.old_price|default:"0" }}
+                                </span>
+                                <span class="fw-bold text-success ms-2">
+                                    ₹{{ venue.discounted_price|default:"0" }}
+                                </span>
+                            </p>
+                            <button class="btn btn-outline-orange w-100 select-venue-btn"
+                                    data-venue-id="{{ venue.id }}"
+                                    data-venue-name="{{ venue.name }}"
+                                    data-venue-base="{{ venue.discounted_price|default:"0" }}"
+                                    data-venue-lat="{{ venue.lat|default:'40.7583' }}"
+                                    data-venue-lng="{{ venue.lng|default:'-73.9876' }}">
+                                Select Venue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No venues found matching your search.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- RIGHT: Selected Venue + Inventory + Map -->
+        <div class="col-lg-4">
+            <h4 class="mb-3">Selected Venue Details</h4>
+            <div class="card shadow-sm p-3 mb-3">
+                <p class="mb-2">Venue: <span id="selectedVenue">None</span></p>
+                <p class="mb-2">Base Price: ₹<span id="baseAmount">0</span></p>
+                <h6 class="mt-3">Available Inventory:</h6>
+                <ul id="inventoryList" class="mb-3">
+                    <li>No inventory selected</li>
+                </ul>
+                <hr>
+                <p class="fw-bold">Total Estimated: ₹<span id="totalAmount">0</span></p>
+            </div>
+            <div class="card shadow-sm card-hover">
+                <div class="card-header bg-gradient-orange text-white">
+                    <h5 class="mb-0">Venue Location</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="venueMap"></div>
+                </div>
             </div>
         </div>
     </div>
-    {% endfor %}
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let map = L.map('venueMap').setView([40.7583, -73.9876], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+    let marker = L.marker([40.7583, -73.9876]).addTo(map);
+
+    const venueButtons = document.querySelectorAll('.select-venue-btn');
+    const selectedVenue = document.getElementById('selectedVenue');
+    const baseAmount = document.getElementById('baseAmount');
+    const inventoryList = document.getElementById('inventoryList');
+    const totalAmount = document.getElementById('totalAmount');
+
+    // Ensure keys are strings
+    const venueInventory = {};
+    {% for k,v in venue_inventory.items %}
+        venueInventory["{{ k }}"] = {{ v|safe }};
+    {% endfor %}
+
+    function updateInventory(venueId) {
+        const items = venueInventory[venueId] || [];
+        inventoryList.innerHTML = "";
+        if(items.length > 0){
+            items.forEach(item => {
+                let text = `${item.item_name}: ${item.quantity}`;
+                if(item.type) text += ` (${item.type})`;
+                const li = document.createElement("li");
+                li.textContent = text;
+                inventoryList.appendChild(li);
+            });
+        } else {
+            inventoryList.innerHTML = "<li>No inventory available</li>";
+        }
+    }
+
+    venueButtons.forEach(btn => {
+        btn.addEventListener('click', function(){
+            const venueId = this.dataset.venueId;
+            const name = this.dataset.venueName;
+            const base = parseFloat(this.dataset.venueBase) || 0;
+            const lat = parseFloat(this.dataset.venueLat) || 40.7583;
+            const lng = parseFloat(this.dataset.venueLng) || -73.9876;
+
+            selectedVenue.textContent = name;
+            baseAmount.textContent = base.toFixed(2);
+            totalAmount.textContent = base.toFixed(2);
+
+            updateInventory(venueId);
+
+            map.setView([lat, lng], 15);
+            marker.setLatLng([lat, lng]);
+
+            const requisitionId = "{{ requisition.id|default:'' }}";
+            if (requisitionId) {
+                fetch("{% url 'save_selected_venue' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}",
+                    },
+                    body: JSON.stringify({ requisition_id: requisitionId, venue_id: venueId })
+                });
+            }
+        });
+    });
+
+    // Auto-select first venue
+    if(venueButtons.length > 0) venueButtons[0].click();
+});
+</script>
 {% endblock %}

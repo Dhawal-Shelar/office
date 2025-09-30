@@ -1,23 +1,49 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_tags %}
 {% block title %}Events Home{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Custom styles for events_home */
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+.bg-gradient-orange {
+    background: linear-gradient(90deg, #ff7e5f, #feb47b);
+}
+.carousel-caption {
+    text-align: left;
+}
+.btn-outline-orange {
+    border-color: #ff7e5f;
+    color: #ff7e5f;
+}
+.btn-outline-orange:hover {
+    background-color: #ff7e5f;
+    color: #fff;
+}
+</style>
+{% endblock %}
 
 {% block content %}
 
 <!-- HERO CAROUSEL -->
-<div id="eventsCarousel" class="carousel slide py-4" data-bs-ride="carousel">
+<div id="eventsCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
     <div class="carousel-inner">
         {% for event in events %}
         <div class="carousel-item {% if forloop.first %}active{% endif %}">
             {% if event.image %}
-            <img src="{{ event.image.url }}" class="d-block w-100" alt="{{ event.name }}" style="height: 400px; object-fit: cover;">
+            <img src="{{ event.image.url }}" class="d-block w-100" style="height: 450px; object-fit: cover;" alt="{{ event.name }}">
             {% else %}
-            <img src="{% static 'images/placeholder.jpg' %}" class="d-block w-100" alt="Placeholder" style="height: 400px; object-fit: cover;">
+            <img src="{% static 'images/placeholder.jpg' %}" class="d-block w-100" style="height: 450px; object-fit: cover;" alt="Placeholder">
             {% endif %}
-            <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-2">
-                <h5>{{ event.name }}</h5>
-                <p>{{ event.description|truncatewords:15 }}</p>
-                <a href="{% url 'information_view' event.id %}" class="btn btn-outline-orange btn-sm">Request Info</a>
+            <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
+                <h2 class="fw-bold">{{ event.name }}</h2>
+                <p>{{ event.description|truncatewords:25 }}</p>
+                <a href="{% url 'information_view' event.id %}" class="btn btn-outline-orange btn-lg">Request Info</a>
             </div>
         </div>
         {% endfor %}
@@ -30,21 +56,22 @@
     </button>
 </div>
 
-<!-- EVENTS CARDS -->
+<!-- EVENTS GRID -->
 <div class="container py-5">
+    <h2 class="mb-4 text-center fw-bold">Our Featured Events</h2>
     <div class="row g-4">
         {% for event in events %}
         <div class="col-md-4">
-            <div class="card bg-dark text-white h-100 shadow-sm">
+            <div class="card bg-dark text-white shadow-sm card-hover h-100">
                 {% if event.image %}
-                <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.name }}">
+                <img src="{{ event.image.url }}" class="card-img-top" style="height: 220px; object-fit: cover;" alt="{{ event.name }}">
                 {% else %}
-                <img src="{% static 'images/placeholder.jpg' %}" class="card-img-top" alt="Placeholder">
+                <img src="{% static 'images/placeholder.jpg' %}" class="card-img-top" style="height: 220px; object-fit: cover;" alt="Placeholder">
                 {% endif %}
-                <div class="card-body">
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">{{ event.name }}</h5>
                     <p class="card-text">{{ event.description|truncatewords:20 }}</p>
-                    <a href="{% url 'information_view' event.id %}" class="btn btn-outline-orange w-100">Request Info</a>
+                    <a href="{% url 'information_view' event.id %}" class="btn btn-outline-orange mt-auto">Request Info</a>
                 </div>
             </div>
         </div>
@@ -58,7 +85,7 @@
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-gradient-orange text-white">
-                <h5 class="modal-title">Welcome — please enter your name & mobile</h5>
+                <h5 class="modal-title">Welcome! Enter Your Name & Mobile</h5>
             </div>
             <div class="modal-body">
                 <form method="post" action="{% url 'visitor_popup_submit' %}">
@@ -77,7 +104,6 @@
         </div>
     </div>
 </div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var visitorModal = new bootstrap.Modal(document.getElementById('visitorModal'));

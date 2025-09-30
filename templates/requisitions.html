@@ -1,40 +1,93 @@
 {% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}Requisitions – Travelsphere{% endblock %}
+{% block extra_head %}
+
+<style>
+.card-hover {
+    transition: all 0.3s ease;
+}
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container my-4">
-  <h2 class="mb-4">All Event Requisitions</h2>
-  <table class="table table-bordered table-striped">
-    <thead class="table-dark">
-      <tr>
-        <th>ID</th>
-        <th>Event</th>
-        <th>Visitor</th>
-        <th>Phone</th>
-        <th>Email</th>
-        <th>People</th>
-        <th>Venue Type</th>
-        <th>Budget</th>
-        <th>Created</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in requisitions %}
-      <tr>
-        <td>{{ r.id }}</td>
-        <td>{{ r.event.name }}</td>
-        <td>{{ r.visitor_name }}</td>
-        <td>{{ r.phone }}</td>
-        <td>{{ r.email }}</td>
-        <td>{{ r.number_of_people }}</td>
-        <td>{{ r.venue_type }}</td>
-        <td>{{ r.budget }}</td>
-        <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="9" class="text-center">No requisitions yet.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+  {% if show_form %}
+    <h2 class="mb-4">Enter Password to Access Requisitions</h2>
+    {% if error %}
+      <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    <form method="post" class="mb-3">
+      {% csrf_token %}
+      <div class="mb-3">
+        <input type="password" name="password" class="form-control" placeholder="Enter password">
+      </div>
+      <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+
+  {% else %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>All Event Requisitions</h2>
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" name="logout" class="btn btn-warning">Logout</button>
+      </form>
+    </div>
+
+    {% for r in requisitions %}
+    <div class="card mb-4 shadow-sm card-hover">
+      <div class="card-header bg-gradient-primary text-white">
+        <h5 class="mb-0">Requisition #{{ r.id }} — {{ r.event.name }}</h5>
+        <small>Created: {{ r.created_at|date:"Y-m-d H:i" }}</small>
+      </div>
+      <div class="card-body">
+        <h6>Visitor Information</h6>
+        <p><strong>Name:</strong> {{ r.visitor_name }}</p>
+        <p><strong>Phone:</strong> {{ r.phone }}</p>
+        <p><strong>Email:</strong> {{ r.email }}</p>
+        <p><strong>Number of People:</strong> {{ r.number_of_people }}</p>
+        <p><strong>Budget:</strong> ₹{{ r.budget }}</p>
+        <p><strong>Venue Type:</strong> {{ r.venue_type }}</p>
+        <p><strong>Religious Affiliation:</strong> {{ r.religious_affiliation }}</p>
+        <p><strong>Special Requests:</strong> {{ r.special_requests|default:"None" }}</p>
+
+        {% if r.extra_requisitions %}
+        <hr>
+        <h6>Extra Requisitions</h6>
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Tables:</strong> {{ r.extra_requisitions.tables }} (₹{{ r.extra_requisitions.tables_price }} each)</p>
+            <p><strong>Chairs:</strong> {{ r.extra_requisitions.chairs }} (₹{{ r.extra_requisitions.chairs_price }} each)</p>
+            <p><strong>Balloons:</strong> {{ r.extra_requisitions.baloons }} (₹{{ r.extra_requisitions.baloons_price }} each)</p>
+            <p><strong>Garlands:</strong> {{ r.extra_requisitions.garlands }} (₹{{ r.extra_requisitions.garlands_price }} each)</p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Decor:</strong> {{ r.extra_requisitions.decor }} (₹{{ r.extra_requisitions.decor_price }})</p>
+            <p><strong>Band:</strong> {{ r.extra_requisitions.band }} (₹{{ r.extra_requisitions.band_price }})</p>
+            <p><strong>DJ:</strong> {{ r.extra_requisitions.DJ }} (₹{{ r.extra_requisitions.DJ_price }})</p>
+            <p><strong>Stereo:</strong> {% if r.extra_requisitions.stereo %}Yes (₹{{ r.extra_requisitions.stereo_price }}){% else %}No{% endif %}</p>
+            <p><strong>Lighting:</strong> {% if r.extra_requisitions.lighting %}Yes (₹{{ r.extra_requisitions.lighting_price }}){% else %}No{% endif %}</p>
+            <p><strong>Photography:</strong> {% if r.extra_requisitions.photography %}Yes (₹{{ r.extra_requisitions.photography_price }}){% else %}No{% endif %}</p>
+            <p><strong>Videography:</strong> {% if r.extra_requisitions.videography %}Yes (₹{{ r.extra_requisitions.videography_price }}){% else %}No{% endif %}</p>
+            <p><strong>Mic:</strong> {% if r.extra_requisitions.mic %}Yes (₹20){% else %}No{% endif %}</p>
+          </div>
+        </div>
+        <hr>
+        <h6>Total Extra Cost: ₹{{ r.extra_requisitions.total_cost }}</h6>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+      <p class="text-muted">No requisitions yet.</p>
+    {% endfor %}
+
+  {% endif %}
+
 </div>
 {% endblock %}

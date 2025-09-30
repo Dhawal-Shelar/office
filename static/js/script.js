@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function() {
         `;
         document.body.appendChild(popup);
 
-        document.getElementById('visitor-popup-form').addEventListener('submit', function(e){
+        document.getElementById('visitor-popup-form').addEventListener('submit', function(e) {
             e.preventDefault();
             sessionStorage.setItem('visitor_popup_shown', 'true');
             popup.remove();

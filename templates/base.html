@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,9 +7,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}Travelsphere{% endblock %}</title>
 
+<!-- Bootstrap CSS -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+<!-- Custom CSS -->
 <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
 <style>
 /* Hamburger Right-to-Left animation */
 .navbar-toggler-icon {
@@ -31,20 +36,12 @@
 .navbar-toggler-icon::before { top: -10px; }
 .navbar-toggler-icon::after { bottom: -10px; }
 
-.navbar-toggler.collapsed .navbar-toggler-icon {
-  transform: rotate(0);
-}
-.navbar-toggler:not(.collapsed) .navbar-toggler-icon {
-  transform: rotate(45deg);
-}
-.navbar-toggler:not(.collapsed) .navbar-toggler-icon::before {
-  transform: rotate(90deg);
-  top: 0;
-}
-.navbar-toggler:not(.collapsed) .navbar-toggler-icon::after {
-  opacity: 0;
-}
+.navbar-toggler.collapsed .navbar-toggler-icon { transform: rotate(0); }
+.navbar-toggler:not(.collapsed) .navbar-toggler-icon { transform: rotate(45deg); }
+.navbar-toggler:not(.collapsed) .navbar-toggler-icon::before { transform: rotate(90deg); top: 0; }
+.navbar-toggler:not(.collapsed) .navbar-toggler-icon::after { opacity: 0; }
 </style>
+
 {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -52,7 +49,9 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-gradient-orange sticky-top shadow-sm">
   <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="{% url 'events_home' %}"><i class="bi bi-compass"></i> Travelsphere</a>
+    <a class="navbar-brand fw-bold" href="{% url 'events_home' %}">
+      <i class="bi bi-compass"></i> Travelsphere
+    </a>
     <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -70,17 +69,21 @@
 <div class="container-fluid">
   <div class="row">
     <!-- Sidebar -->
-    <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse position-fixed h-100">
+    <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse position-fixed h-100 overflow-auto">
       <div class="position-sticky pt-3">
         <ul class="nav flex-column text-white">
           <li class="nav-item">
-            <a class="nav-link text-white" data-bs-toggle="collapse" href="#eventDropdown" role="button">
+            <a class="nav-link text-white" data-bs-toggle="collapse" href="#eventDropdown" role="button" aria-expanded="false">
               <i class="bi bi-calendar-event"></i> Events <i class="bi bi-chevron-down float-end"></i>
             </a>
             <ul class="collapse list-unstyled ms-3" id="eventDropdown">
-              {% for event in events %}
-              <li><a class="nav-link text-light" href="{% url 'information_view' event.id %}">{{ event.name }}</a></li>
-              {% endfor %}
+              {% if events %}
+                {% for event in events %}
+                  <li><a class="nav-link text-light" href="{% url 'information_view' event.id %}">{{ event.name }}</a></li>
+                {% endfor %}
+              {% else %}
+                  <li class="nav-link text-light">No events available</li>
+              {% endif %}
             </ul>
           </li>
           <li class="nav-item"><a class="nav-link text-white" href="{% url 'about' %}"><i class="bi bi-info-circle"></i> About</a></li>
@@ -97,10 +100,12 @@
   </div>
 </div>
 
+<!-- Footer -->
 <footer class="bg-gradient-orange text-white text-center py-4 mt-4">
-  <p class="mb-0">&copy; {{ year|default:"2025" }} Travelsphere. All rights reserved.</p>
+  <p class="mb-0">&copy; {% now "Y" %} Travelsphere. All rights reserved.</p>
 </footer>
 
+<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{% static 'js/main.js' %}"></script>
 {% block extra_js %}{% endblock %}

@@ -1,101 +1,304 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from .models import Event, Visitor, Requisition
-
+from django.http import JsonResponse
+from django.db.models import Q
+from django.views.decorators.csrf import csrf_exempt
+from .models import Event, Visitor, Requisition, ExtraRequisitions, VenueType, VenueRequisition
+import json
+# ---------------- EVENTS HOME ----------------
 def events_home(request):
     events = Event.objects.all()
-    show_popup = not bool(request.session.get('visitor_id'))
+    return render(request, "events_home.html", {"events": events})
 
-    return render(request, 'events_home.html', {
-        'events': events,
-        'show_popup': show_popup,
-    })
-
-
+# ---------------- VISITOR POPUP ----------------
+@csrf_exempt
 def visitor_popup_submit(request):
     if request.method == "POST":
-        fname = request.POST.get('fname', '').strip()
-        mobile = request.POST.get('mobile', '').strip()
+        fname = request.POST.get("fname", "Unknown")
+        mobile = request.POST.get("mobile", "Unknown")
+        visitor = Visitor.objects.create(fname=fname, mobile=mobile)
 
-        if not (fname and mobile):
-            messages.error(request, "Please provide both name and mobile.")
-            return redirect('events_home')
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"status": "success", "visitor_id": visitor.id})
+        return redirect("events_home")
 
-        visitor, created = Visitor.objects.get_or_create(mobile=mobile, defaults={'fname': fname})
+    return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
 
-        if not created and visitor.fname != fname:
-            visitor.fname = fname
-            visitor.save()
-
-        # Save visitor info in session
-        request.session['visitor_id'] = visitor.id
-        request.session['visitor_name'] = visitor.fname
-        request.session['visitor_mobile'] = visitor.mobile
-
-    return redirect('events_home')
-
-
+# ---------------- EVENT INFORMATION ----------------
 def information_view(request, event_id):
-    event = Event.objects.get(id=event_id)
+    event = get_object_or_404(Event, id=event_id)
 
     if request.method == "POST":
-        Requisition.objects.create(
-            event=event,
-            visitor_name=request.POST.get("visitor_name"),
-            phone=request.POST.get("phone"),
-            email=request.POST.get("email"),
-            number_of_people=request.POST.get("number_of_people"),
-            tables=request.POST.get("tables"),
-            chairs=request.POST.get("chairs"),
-            balloons=request.POST.get("balloons"),
-            garlands=request.POST.get("garlands"),
-            stereo=request.POST.get("stereo"),
-            mic=request.POST.get("mic"),
-            venue_type=request.POST.get("venue_type"),
-            budget=request.POST.get("budget"),
-            religious_affiliation=request.POST.get("religious_affiliation"),
-            special_requests=request.POST.get("special_requests")
+        visitor_id = request.POST.get("visitor_id")
+        visitor = Visitor.objects.filter(id=visitor_id).first()
+
+        requisition, _ = Requisition.objects.update_or_create(
+            id=request.POST.get("requisition_id"),
+            defaults={
+                "event": event,
+                "visitor": visitor,
+                "visitor_name": request.POST.get("visitor_name", visitor.fname if visitor else "Unknown"),
+                "phone": request.POST.get("phone", visitor.mobile if visitor else "Unknown"),
+                "email": request.POST.get("email", "unknown@example.com"),
+                "number_of_people": int(request.POST.get("number_of_people", 0)),
+                "budget": request.POST.get("budget", ""),
+                "religious_affiliation": request.POST.get("religious_affiliation", ""),
+                "special_requests": request.POST.get("special_requests", ""),
+                "venue_type": request.POST.get("venue_type", "")
+            }
         )
-        messages.success(request, "Your request has been submitted!")
-        return redirect('events_home')
 
-    return render(request, 'information.html', {'event': event})
+        # Handle ExtraRequisitions
+        extra, _ = ExtraRequisitions.objects.get_or_create(requisition=requisition)
+
+        # Numeric fields
+        numeric_fields = ["tables", "chairs", "baloons", "garlands"]
+        for field in numeric_fields:
+            value = request.POST.get(field)
+            if value and value.isdigit():
+                setattr(extra, field, int(value))
+
+        # Service/choice fields (decor, band, DJ, stereo, lighting, photography, videography, mic)
+        service_fields = ["decor", "band", "DJ", "stereo", "lighting", "photography", "videography", "mic"]
+        for field in service_fields:
+            value = request.POST.get(field)
+            if value:
+                setattr(extra, field, value)
+
+        extra.save()
+        return redirect("requisitions_list")
+
+    venues = VenueType.objects.all()
+    return render(request, "information.html", {"event": event, "venues": venues})
+
+# ---------------- VENUE VIEW ----------------
+
+def venue_view(request):
+    import json
+    from django.db.models import Q
+
+    # -----------------------------
+    # Step 1: Ensure a visitor exists
+    # -----------------------------
+    visitor_id = request.session.get("visitor_id")
+    visitor = None
+    if visitor_id:
+        visitor = Visitor.objects.filter(id=visitor_id).first()
+
+    if not visitor:
+        visitor = Visitor.objects.create(fname="Guest", mobile="0000000000")
+        request.session["visitor_id"] = visitor.id
+
+    # -----------------------------
+    # Step 2: Get event (optional)
+    # -----------------------------
+    event_id = request.GET.get("event_id")
+    event = None
+    if event_id:
+        event = Event.objects.filter(id=event_id).first()
+
+    # -----------------------------
+    # Step 3: Filter venues by search query
+    # -----------------------------
+    venues = VenueType.objects.all()
+    query = request.GET.get('q', '').strip()
+    if query:
+        venues = venues.filter(
+            Q(name__icontains=query) |
+            Q(location__icontains=query) |
+            Q(area__icontains=query)
+        )
+
+    # -----------------------------
+    # Step 4: Build venue inventory
+    # -----------------------------
+    venue_inventory = {}
+    for venue in venues:
+        inventories = []
+        vr = VenueRequisition.objects.filter(venue=venue).first()
+        if vr:
+            inventories.append({"item_name": "Tables", "quantity": vr.tables_count})
+            inventories.append({"item_name": "Chairs", "quantity": vr.chairs_count})
+            inventories.append({"item_name": "Balloons", "quantity": vr.baloons_count})
+            inventories.append({"item_name": "Garlands", "quantity": vr.garlands_count})
+            inventories.append({"item_name": "Decor", "quantity": 1, "type": vr.decor_type})
+            inventories.append({"item_name": "Band", "quantity": 1, "type": vr.band_type})
+            inventories.append({"item_name": "DJ", "quantity": 1, "type": vr.DJ_type})
+        venue_inventory[venue.id] = inventories
+
+    # -----------------------------
+    # Step 5: Get or create current requisition
+    # -----------------------------
+    requisition = Requisition.objects.filter(visitor=visitor).last()
+    if not requisition:
+        if not event:
+            event = Event.objects.first()
+        requisition = Requisition.objects.create(visitor=visitor, event=event)
+
+    # -----------------------------
+    # Step 6: Prepare context
+    # -----------------------------
+    context = {
+        "venues": venues,
+        "venue_inventory": json.dumps(venue_inventory),
+        "requisition": requisition,
+        "event": event,
+    }
+
+    return render(request, "venues.html", context)
 
 
-def requisitions_list(request):
-    requisitions = Requisition.objects.select_related('event', 'visitor').order_by('-created_at')
-    return render(request, 'requisitions.html', {'requisitions': requisitions})
+# ---------------- SAVE SELECTED VENUE (AJAX) ----------------
+@csrf_exempt
+def save_selected_venue(request):
+    if request.method == "POST":
 
+            data = json.loads(request.body)
+            
+            print('data',data)
+            requisition_id = data.get("requisition_id")
+            venue_id = data.get("venue_id")
 
-# Static pages
-def about_view(request):
-    event = Event.objects.all()
-    team_members = [
-        {"name": "Alice Johnson", "role": "Event Planner", "image": "https://i.pravatar.cc/150?img=32"},
-        {"name": "Bob Smith", "role": "Coordinator", "image": "https://i.pravatar.cc/150?img=45"},
-        {"name": "Catherine Lee", "role": "Marketing", "image": "https://i.pravatar.cc/150?img=12"},
+            requisition = Requisition.objects.filter(id=requisition_id).first()
+            venue = VenueType.objects.filter(id=venue_id).first()
+
+            if not requisition or not venue:
+                return JsonResponse({"status": "error", "message": "Invalid requisition or venue"}, status=400)
+
+            # Save foreign key to venue (better than just name)
+            requisition.venue_type = venue  # Make sure Requisition.venue_type is FK to VenueType
+            requisition.save()
+
+            return JsonResponse({"status": "success"})
+        # except Exception as e:
+        #     return JsonResponse({"status": "error", "message": str(e)}, status=400)
+
+    return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
+
+# ---------------- EXTRA REQUISITIONS VIEW (AJAX + Page) ----------------
+@csrf_exempt
+def save_extra_requisition(request):
+    """
+    AJAX endpoint to save user's selected extra requisitions,
+    including quantity and service choice.
+    """
+    if request.method == "POST":
+        import json
+        data = json.loads(request.body)
+        requisition_id = data.get("requisition_id")
+        item_id = data.get("item_id")
+        quantity = data.get("quantity", 0)
+        service_option = data.get("service_option", None)
+
+        requisition = Requisition.objects.filter(id=requisition_id).first()
+        if not requisition:
+            return JsonResponse({"status": "error", "message": "Invalid requisition"}, status=400)
+
+        extra, _ = ExtraRequisitions.objects.get_or_create(requisition=requisition)
+
+        # Map item_id to correct field
+        item_map = {
+            "tables": "tables",
+            "chairs": "chairs",
+            "baloons": "baloons",
+            "garlands": "garlands",
+            "decor": "decor",
+            "band": "band",
+            "DJ": "DJ",
+            "stereo": "stereo",
+            "lighting": "lighting",
+            "photography": "photography",
+            "videography": "videography",
+            "mic": "mic",
+        }
+
+        field_name = item_map.get(str(item_id))
+        if not field_name:
+            return JsonResponse({"status": "error", "message": "Invalid item"}, status=400)
+
+        # Numeric fields
+        if field_name in ["tables", "chairs", "baloons", "garlands"]:
+            setattr(extra, field_name, int(quantity))
+        else:  # service fields
+            if service_option:
+                setattr(extra, field_name, service_option)
+
+        extra.save()
+        return JsonResponse({"status": "success"})
+
+    return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
+
+def extra_requisitions_view(request, requisition_id):
+    requisition = get_object_or_404(Requisition, id=requisition_id)
+    extra, _ = ExtraRequisitions.objects.get_or_create(requisition=requisition)
+
+    # Prepare extra_items to include images and service options
+    extra_items = [
+        {"id": "tables", "name": "Tables", "price": 50, "selected_quantity": extra.tables},
+        {"id": "chairs", "name": "Chairs", "price": 10, "selected_quantity": extra.chairs},
+        {"id": "baloons", "name": "Balloons", "price": 5, "selected_quantity": extra.baloons},
+        {"id": "garlands", "name": "Garlands", "price": 20, "selected_quantity": extra.garlands},
+        {"id": "decor", "name": "Decor", "price": 200, "selected_quantity": 1, "services": {
+            "basic": "Basic", "standard": "Standard", "premium": "Premium"
+        }, "image": extra.decor_image.url if extra.decor_image else ""},
+
+        {"id": "band", "name": "Band", "price": 300, "selected_quantity": 1, "services": {
+            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
+        }, "image": extra.band_image.url if extra.band_image else ""},
+
+        {"id": "DJ", "name": "DJ", "price": 250, "selected_quantity": 1, "services": {
+            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
+        }, "image": extra.DJ_image.url if extra.DJ_image else ""},
+
+        {"id": "stereo", "name": "Stereo", "price": 100, "selected_quantity": 1, "services": {
+            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
+        }, "image": extra.stereo_image.url if extra.stereo_image else ""},
+
+        {"id": "lighting", "name": "Lighting", "price": 120, "selected_quantity": 1, "services": {
+            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
+        }, "image": extra.lighting_image.url if extra.lighting_image else ""},
+
+        {"id": "photography", "name": "Photography", "price": 400, "selected_quantity": 1, "services": {
+            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
+        }, "image": extra.photography_image.url if extra.photography_image else ""},
+
+        {"id": "videography", "name": "Videography", "price": 450, "selected_quantity": 1, "services": {
+            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
+        }, "image": extra.videography_image.url if extra.videography_image else ""},
+
+        {"id": "mic", "name": "Microphone", "price": 50, "selected_quantity": 1, "services": {
+            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
+        }, "image": extra.mic_image.url if extra.mic_image else ""},
     ]
-    return render(request, 'about.html', {"team_members": team_members, 'event': event})
 
+    return render(request, "extra_requisitions.html", {
+        "requisition": requisition,
+        "extra": extra,
+        "extra_items": extra_items
+    })
+
+# ---------------- REQUISITIONS LIST ----------------
+def requisitions_list(request):
+    PSEUDO_PASS = "caller123"
+
+    if not request.session.get("access_granted"):
+        if request.method == "POST":
+            password = request.POST.get("password", "")
+            if password == PSEUDO_PASS:
+                request.session["access_granted"] = True
+            else:
+                return render(request, "requisitions.html", {"error": "Incorrect password.", "show_form": True})
+        else:
+            return render(request, "requisitions.html", {"show_form": True})
+
+    requisitions = Requisition.objects.select_related("event", "visitor").prefetch_related("extra_requisitions").all()
+    return render(request, "requisitions.html", {"requisitions": requisitions, "show_form": False})
+
+# ---------------- STATIC PAGES ----------------
+def about_view(request):
+    return render(request, "about.html")
 
 def services_view(request):
-    event = Event.objects.all()
-    services = [
-        
-        {"title": "Wedding Planning", "icon": "bi-heart-fill", "description": "Complete wedding planning solutions."},
-        {"title": "Corporate Events", "icon": "bi-briefcase-fill", "description": "Professional corporate events management."},
-        {"title": "Birthday Parties", "icon": "bi-cup-straw", "description": "Fun and customized birthday events."},
-        {"title": "Conference & Seminars", "icon": "bi-mic", "description": "Organize conferences and seminars smoothly."},
-    ]
-    return render(request, 'services.html', {"services": services, 'event':event})
-
+    return render(request, "services.html")
 
 def contact_view(request):
-    event = Event.objects.all()
-    if request.method == "POST":
-        # Optionally store contact messages
-        request.session['contact_success'] = True
-        return redirect('contact')
-
-    contact_success = request.session.pop('contact_success', False)
-    return render(request, 'contact.html', {"contact_success": contact_success , 'event': event})
+    return render(request, "contact.html")
