@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Extra Requisitions - {{ selected_venue.name|default:"Venue" }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+.btn-outline-orange {
+    border-color: #ff7e5f;
+    color: #ff7e5f;
+}
+.btn-outline-orange:hover {
+    background-color: #ff7e5f;
+    color: #fff;
+}
+.quantity-input {
+    width: 60px;
+    text-align: center;
+}
+.service-preview {
+    width: 100%;
+    max-height: 150px;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row g-4">
+        <!-- LEFT: Extra items -->
+        <div class="col-lg-8">
+            <h4 class="mb-3">Select Extra Requisitions</h4>
+            <div class="row g-3">
+                {% for item in extra_items %}
+                <div class="col-md-6">
+                    <div class="card shadow-sm card-hover p-3">
+                        <h5>{{ item.name }}</h5>
+                        {% if item.image %}
+                        <img src="{{ item.image }}" alt="{{ item.name }}" class="service-preview" id="preview-{{ item.id }}">
+                        {% endif %}
+                        <p class="mb-1">Unit Price: ₹<span class="unit-price">{{ item.price }}</span></p>
+                        <div class="d-flex align-items-center mb-2">
+                            <input type="number" min="0" value="{{ item.selected_quantity|default:'0' }}" class="form-control quantity-input me-2" data-item-id="{{ item.id }}">
+                            <button type="button" class="btn btn-outline-orange add-requisition-btn" data-item-id="{{ item.id }}">Add</button>
+                        </div>
+                        {% if item.services %}
+                        <select class="form-select service-select" data-item-id="{{ item.id }}">
+                            {% for key, label in item.services.items %}
+                            <option value="{{ key }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% endif %}
+                        <p class="mt-2">Total: ₹<span class="item-total">{{ item.selected_quantity|default:'0'|floatformat:2 }}</span></p>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No extra requisitions available.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- RIGHT: Summary -->
+        <div class="col-lg-4">
+            <h4 class="mb-3">Selected Venue Summary</h4>
+            <div class="card shadow-sm p-3 mb-3">
+                <p>Venue: <span id="selectedVenue">{{ selected_venue.name|default:"None" }}</span></p>
+                <p>Base Price: ₹<span id="baseAmount">{{ selected_venue.discounted_price|default:"0" }}</span></p>
+                <hr>
+                <p>Extra Requisitions Cost: ₹<span id="extraAmount">0.00</span></p>
+                <p class="fw-bold">Total Estimated: ₹<span id="totalAmount">{{ selected_venue.discounted_price|default:"0" }}</span></p>
+                <a href="{% url 'information_view' requisition.event.id %}" class="btn btn-outline-orange w-100 mt-3">Back to Booking</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const extraAmountEl = document.getElementById('extraAmount');
+    const totalAmountEl = document.getElementById('totalAmount');
+    const baseAmountEl = document.getElementById('baseAmount');
+    const requisitionId = "{{ requisition.id }}";
+
+    function updateTotals() {
+        let extraTotal = 0;
+        document.querySelectorAll('.quantity-input').forEach(input => {
+            const unitPrice = parseFloat(input.closest('.card').querySelector('.unit-price').textContent) || 0;
+            const qty = parseInt(input.value) || 0;
+            const itemTotal = unitPrice * qty;
+            input.closest('.card').querySelector('.item-total').textContent = itemTotal.toFixed(2);
+            extraTotal += itemTotal;
+        });
+        extraAmountEl.textContent = extraTotal.toFixed(2);
+        const base = parseFloat(baseAmountEl.textContent) || 0;
+        totalAmountEl.textContent = (base + extraTotal).toFixed(2);
+    }
+
+    function saveItem(itemId, quantity) {
+        const serviceSelect = document.querySelector('.service-select[data-item-id="'+itemId+'"]');
+        const serviceOption = serviceSelect ? serviceSelect.value : null;
+
+        fetch("{% url 'save_extra_requisition' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({requisition_id: requisitionId, item_id: itemId, quantity: quantity, service_option: serviceOption})
+        }).then(res => res.json()).then(data => {
+            if(data.status === 'success'){
+                updateTotals();
+            }
+        });
+    }
+
+    document.querySelectorAll('.add-requisition-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const itemId = this.dataset.itemId;
+            const qtyInput = document.querySelector('.quantity-input[data-item-id="'+itemId+'"]');
+            const qty = parseInt(qtyInput.value) || 0;
+            saveItem(itemId, qty);
+        });
+    });
+
+    document.querySelectorAll('.quantity-input').forEach(input => {
+        input.addEventListener('input', updateTotals);
+    });
+
+    document.querySelectorAll('.service-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const itemId = this.dataset.itemId;
+            const qtyInput = document.querySelector('.quantity-input[data-item-id="'+itemId+'"]');
+            saveItem(itemId, parseInt(qtyInput.value) || 0);
+        });
+    });
+
+    updateTotals();
+});
+</script>
+{% endblock %}

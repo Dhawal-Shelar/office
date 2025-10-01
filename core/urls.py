@@ -17,14 +17,15 @@ urlpatterns = [
     # Event information & requisition
     path('information/<int:event_id>/', views.information_view, name='information_view'),
 
-    # Venues listing (shows VenueType + VenueRequisition inventory)
+    # Venues listing
     path('venues/', views.venue_view, name='venue_view'),
 
     # AJAX: Save selected venue
     path('save-selected-venue/', views.save_selected_venue, name='save_selected_venue'),
 
     # Extra Requisitions
-    path('extra-requisitions/<int:requisition_id>/', views.extra_requisitions_view, name='extra_requisitions_view'),
+    path('extra_requisitions/<int:requisition_id>/', views.extra_requisitions_view, name='extra_requisitions'),
+    path('save_extra_requisition/', views.save_extra_requisition, name='save_extra_requisition'),
 
     # Requisitions list (password protected)
     path('requisitions/', views.requisitions_list, name='requisitions_list'),
@@ -34,7 +35,7 @@ urlpatterns = [
     path('services/', views.services_view, name='services'),
     path('contact/', views.contact_view, name='contact'),
 
-    # Optional: dedicated view for venue inventories (can show available venues)
+    # Optional: dedicated view for venue inventories
     path('venue-inventory/', views.venue_view, name='venue_inventory_view'),
 ]
 

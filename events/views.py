@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from .models import Event, Visitor, Requisition, ExtraRequisitions, VenueType, VenueRequisition
 import json
+
 # ---------------- EVENTS HOME ----------------
 def events_home(request):
     events = Event.objects.all()
@@ -50,14 +51,12 @@ def information_view(request, event_id):
         # Handle ExtraRequisitions
         extra, _ = ExtraRequisitions.objects.get_or_create(requisition=requisition)
 
-        # Numeric fields
         numeric_fields = ["tables", "chairs", "baloons", "garlands"]
         for field in numeric_fields:
             value = request.POST.get(field)
             if value and value.isdigit():
                 setattr(extra, field, int(value))
 
-        # Service/choice fields (decor, band, DJ, stereo, lighting, photography, videography, mic)
         service_fields = ["decor", "band", "DJ", "stereo", "lighting", "photography", "videography", "mic"]
         for field in service_fields:
             value = request.POST.get(field)
@@ -71,34 +70,17 @@ def information_view(request, event_id):
     return render(request, "information.html", {"event": event, "venues": venues})
 
 # ---------------- VENUE VIEW ----------------
-
 def venue_view(request):
-    import json
-    from django.db.models import Q
-
-    # -----------------------------
-    # Step 1: Ensure a visitor exists
-    # -----------------------------
     visitor_id = request.session.get("visitor_id")
-    visitor = None
-    if visitor_id:
-        visitor = Visitor.objects.filter(id=visitor_id).first()
+    visitor = Visitor.objects.filter(id=visitor_id).first() if visitor_id else None
 
     if not visitor:
         visitor = Visitor.objects.create(fname="Guest", mobile="0000000000")
         request.session["visitor_id"] = visitor.id
 
-    # -----------------------------
-    # Step 2: Get event (optional)
-    # -----------------------------
     event_id = request.GET.get("event_id")
-    event = None
-    if event_id:
-        event = Event.objects.filter(id=event_id).first()
+    event = Event.objects.filter(id=event_id).first() if event_id else Event.objects.first()
 
-    # -----------------------------
-    # Step 3: Filter venues by search query
-    # -----------------------------
     venues = VenueType.objects.all()
     query = request.GET.get('q', '').strip()
     if query:
@@ -108,81 +90,82 @@ def venue_view(request):
             Q(area__icontains=query)
         )
 
-    # -----------------------------
-    # Step 4: Build venue inventory
-    # -----------------------------
+    requisition = Requisition.objects.filter(visitor=visitor).last()
+    if not requisition:
+        requisition = Requisition.objects.create(visitor=visitor, event=event)
+
     venue_inventory = {}
     for venue in venues:
         inventories = []
+
         vr = VenueRequisition.objects.filter(venue=venue).first()
         if vr:
-            inventories.append({"item_name": "Tables", "quantity": vr.tables_count})
-            inventories.append({"item_name": "Chairs", "quantity": vr.chairs_count})
-            inventories.append({"item_name": "Balloons", "quantity": vr.baloons_count})
-            inventories.append({"item_name": "Garlands", "quantity": vr.garlands_count})
-            inventories.append({"item_name": "Decor", "quantity": 1, "type": vr.decor_type})
-            inventories.append({"item_name": "Band", "quantity": 1, "type": vr.band_type})
-            inventories.append({"item_name": "DJ", "quantity": 1, "type": vr.DJ_type})
+            inventories.extend([
+                {"item_name": "Tables", "quantity": vr.tables_count},
+                {"item_name": "Chairs", "quantity": vr.chairs_count},
+                {"item_name": "Balloons", "quantity": vr.baloons_count},
+                {"item_name": "Garlands", "quantity": vr.garlands_count},
+                {"item_name": "Decor", "quantity": 1, "type": vr.decor_type},
+                {"item_name": "Band", "quantity": 1, "type": vr.band_type},
+                {"item_name": "DJ", "quantity": 1, "type": vr.DJ_type},
+            ])
+
+        extra, _ = ExtraRequisitions.objects.get_or_create(requisition=requisition)
+        inventories.extend([
+            {"item_name": "Extra Tables", "quantity": extra.tables},
+            {"item_name": "Extra Chairs", "quantity": extra.chairs},
+            {"item_name": "Extra Balloons", "quantity": extra.baloons},
+            {"item_name": "Extra Garlands", "quantity": extra.garlands},
+            {"item_name": "Extra Decor", "type": extra.decor, "quantity": 1},
+            {"item_name": "Extra Band", "type": extra.band, "quantity": 1},
+            {"item_name": "Extra DJ", "type": extra.DJ, "quantity": 1},
+            {"item_name": "Extra Stereo", "type": extra.stereo, "quantity": 1},
+            {"item_name": "Extra Lighting", "type": extra.lighting, "quantity": 1},
+            {"item_name": "Extra Photography", "type": extra.photography, "quantity": 1},
+            {"item_name": "Extra Videography", "type": extra.videography, "quantity": 1},
+            {"item_name": "Extra Mic", "type": extra.mic, "quantity": 1},
+        ])
+
         venue_inventory[venue.id] = inventories
 
-    # -----------------------------
-    # Step 5: Get or create current requisition
-    # -----------------------------
-    requisition = Requisition.objects.filter(visitor=visitor).last()
-    if not requisition:
-        if not event:
-            event = Event.objects.first()
-        requisition = Requisition.objects.create(visitor=visitor, event=event)
-
-    # -----------------------------
-    # Step 6: Prepare context
-    # -----------------------------
     context = {
         "venues": venues,
         "venue_inventory": json.dumps(venue_inventory),
         "requisition": requisition,
         "event": event,
     }
-
     return render(request, "venues.html", context)
-
 
 # ---------------- SAVE SELECTED VENUE (AJAX) ----------------
 @csrf_exempt
 def save_selected_venue(request):
     if request.method == "POST":
+        data = json.loads(request.body)
+        requisition_id = data.get("requisition_id")
+        venue_id = data.get("venue_id")
 
-            data = json.loads(request.body)
-            
-            print('data',data)
-            requisition_id = data.get("requisition_id")
-            venue_id = data.get("venue_id")
+        requisition = Requisition.objects.filter(id=requisition_id).first()
+        venue = VenueType.objects.filter(id=venue_id).first()
 
-            requisition = Requisition.objects.filter(id=requisition_id).first()
-            venue = VenueType.objects.filter(id=venue_id).first()
+        if not requisition or not venue:
+            return JsonResponse({"status": "error", "message": "Invalid requisition or venue"}, status=400)
 
-            if not requisition or not venue:
-                return JsonResponse({"status": "error", "message": "Invalid requisition or venue"}, status=400)
+        requisition.venue_type = venue.name
+        requisition.save()
 
-            # Save foreign key to venue (better than just name)
-            requisition.venue_type = venue  # Make sure Requisition.venue_type is FK to VenueType
-            requisition.save()
-
-            return JsonResponse({"status": "success"})
-        # except Exception as e:
-        #     return JsonResponse({"status": "error", "message": str(e)}, status=400)
+        return JsonResponse({
+            "status": "success",
+            "venue_id": venue.id,
+            "venue_name": venue.name,
+            "discounted_price": venue.discounted_price
+        })
 
     return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
 
-# ---------------- EXTRA REQUISITIONS VIEW (AJAX + Page) ----------------
+# ---------------- EXTRA REQUISITIONS VIEW ----------------
 @csrf_exempt
 def save_extra_requisition(request):
-    """
-    AJAX endpoint to save user's selected extra requisitions,
-    including quantity and service choice.
-    """
     if request.method == "POST":
-        import json
         data = json.loads(request.body)
         requisition_id = data.get("requisition_id")
         item_id = data.get("item_id")
@@ -195,7 +178,6 @@ def save_extra_requisition(request):
 
         extra, _ = ExtraRequisitions.objects.get_or_create(requisition=requisition)
 
-        # Map item_id to correct field
         item_map = {
             "tables": "tables",
             "chairs": "chairs",
@@ -215,10 +197,9 @@ def save_extra_requisition(request):
         if not field_name:
             return JsonResponse({"status": "error", "message": "Invalid item"}, status=400)
 
-        # Numeric fields
         if field_name in ["tables", "chairs", "baloons", "garlands"]:
             setattr(extra, field_name, int(quantity))
-        else:  # service fields
+        else:
             if service_option:
                 setattr(extra, field_name, service_option)
 
@@ -231,49 +212,36 @@ def extra_requisitions_view(request, requisition_id):
     requisition = get_object_or_404(Requisition, id=requisition_id)
     extra, _ = ExtraRequisitions.objects.get_or_create(requisition=requisition)
 
-    # Prepare extra_items to include images and service options
+    selected_venue = VenueType.objects.filter(name=requisition.venue_type).first()
+
     extra_items = [
         {"id": "tables", "name": "Tables", "price": 50, "selected_quantity": extra.tables},
         {"id": "chairs", "name": "Chairs", "price": 10, "selected_quantity": extra.chairs},
         {"id": "baloons", "name": "Balloons", "price": 5, "selected_quantity": extra.baloons},
         {"id": "garlands", "name": "Garlands", "price": 20, "selected_quantity": extra.garlands},
-        {"id": "decor", "name": "Decor", "price": 200, "selected_quantity": 1, "services": {
-            "basic": "Basic", "standard": "Standard", "premium": "Premium"
-        }, "image": extra.decor_image.url if extra.decor_image else ""},
-
-        {"id": "band", "name": "Band", "price": 300, "selected_quantity": 1, "services": {
-            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
-        }, "image": extra.band_image.url if extra.band_image else ""},
-
-        {"id": "DJ", "name": "DJ", "price": 250, "selected_quantity": 1, "services": {
-            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
-        }, "image": extra.DJ_image.url if extra.DJ_image else ""},
-
-        {"id": "stereo", "name": "Stereo", "price": 100, "selected_quantity": 1, "services": {
-            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
-        }, "image": extra.stereo_image.url if extra.stereo_image else ""},
-
-        {"id": "lighting", "name": "Lighting", "price": 120, "selected_quantity": 1, "services": {
-            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
-        }, "image": extra.lighting_image.url if extra.lighting_image else ""},
-
-        {"id": "photography", "name": "Photography", "price": 400, "selected_quantity": 1, "services": {
-            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
-        }, "image": extra.photography_image.url if extra.photography_image else ""},
-
-        {"id": "videography", "name": "Videography", "price": 450, "selected_quantity": 1, "services": {
-            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
-        }, "image": extra.videography_image.url if extra.videography_image else ""},
-
-        {"id": "mic", "name": "Microphone", "price": 50, "selected_quantity": 1, "services": {
-            "none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"
-        }, "image": extra.mic_image.url if extra.mic_image else ""},
+        {"id": "decor", "name": "Decor", "price": 200, "selected_quantity": 1,
+         "services": {"basic": "Basic", "standard": "Standard", "premium": "Premium"}},
+        {"id": "band", "name": "Band", "price": 300, "selected_quantity": 1,
+         "services": {"none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"}},
+        {"id": "DJ", "name": "DJ", "price": 250, "selected_quantity": 1,
+         "services": {"none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"}},
+        {"id": "stereo", "name": "Stereo", "price": 150, "selected_quantity": 1,
+         "services": {"none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"}},
+        {"id": "lighting", "name": "Lighting", "price": 100, "selected_quantity": 1,
+         "services": {"none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"}},
+        {"id": "photography", "name": "Photography", "price": 500, "selected_quantity": 1,
+         "services": {"none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"}},
+        {"id": "videography", "name": "Videography", "price": 600, "selected_quantity": 1,
+         "services": {"none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"}},
+        {"id": "mic", "name": "Mic", "price": 50, "selected_quantity": 1,
+         "services": {"none": "None", "basic": "Basic", "standard": "Standard", "premium": "Premium"}},
     ]
 
     return render(request, "extra_requisitions.html", {
         "requisition": requisition,
         "extra": extra,
-        "extra_items": extra_items
+        "extra_items": extra_items,
+        "selected_venue": selected_venue
     })
 
 # ---------------- REQUISITIONS LIST ----------------

@@ -35,3 +35,15 @@ def format_price(value):
         return f"${float(value):,.2f}"
     except:
         return value
+
+
+# Filter to get image URL for a service
+@register.filter
+def get_service_image(item, service_key):
+    try:
+        image_field = getattr(item, f"{service_key}_image", None)
+        if image_field and hasattr(image_field, "url"):
+            return image_field.url
+    except:
+        pass
+    return ""  # fallback if no image
