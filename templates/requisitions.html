@@ -1,92 +1,130 @@
 {% extends "base.html" %}
 {% load static %}
-{% load custom_tags %}
-{% block title %}Requisitions – Travelsphere{% endblock %}
-{% block extra_head %}
+{% block title %}Payment – Travelsphere{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-.card-hover {
-    transition: all 0.3s ease;
-}
-.card-hover:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-}
+  .card-hover {
+      transition: all 0.3s ease;
+  }
+  .card-hover:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  }
+  .payment-btn {
+      background: linear-gradient(90deg, #ff7e5f, #feb47b);
+      border: none;
+      color: white;
+      font-weight: bold;
+      padding: 12px 25px;
+      border-radius: 50px;
+      transition: 0.3s;
+  }
+  .payment-btn:hover {
+      transform: scale(1.05);
+  }
+  .info-label {
+      font-weight: 600;
+  }
+  .total-cost {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #ff5722;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container my-4">
+<div class="container my-5">
 
-  {% if show_form %}
-    <h2 class="mb-4">Enter Password to Access Requisitions</h2>
-    {% if error %}
-      <div class="alert alert-danger">{{ error }}</div>
-    {% endif %}
-    <form method="post" class="mb-3">
-      {% csrf_token %}
-      <div class="mb-3">
-        <input type="password" name="password" class="form-control" placeholder="Enter password">
-      </div>
-      <button type="submit" class="btn btn-primary">Login</button>
-    </form>
-
-  {% else %}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2>All Event Requisitions</h2>
-      <form method="post">
-        {% csrf_token %}
-        <button type="submit" name="logout" class="btn btn-warning">Logout</button>
-      </form>
-    </div>
-
-    {% for r in requisitions %}
-    <div class="card mb-4 shadow-sm card-hover">
+  {% if requisition %}
+    <div class="card card-hover shadow-sm">
       <div class="card-header bg-gradient-primary text-white">
-        <h5 class="mb-0">Requisition #{{ r.id }} — {{ r.event.name }}</h5>
-        <small>Created: {{ r.created_at|date:"Y-m-d H:i" }}</small>
+        <h4 class="mb-0">Requisition #{{ requisition.id }} — {{ requisition.event.name }}</h4>
+        <small>Created: {{ requisition.created_at|date:"Y-m-d H:i" }}</small>
       </div>
       <div class="card-body">
-        <h6>Visitor Information</h6>
-        <p><strong>Name:</strong> {{ r.visitor_name }}</p>
-        <p><strong>Phone:</strong> {{ r.phone }}</p>
-        <p><strong>Email:</strong> {{ r.email }}</p>
-        <p><strong>Number of People:</strong> {{ r.number_of_people }}</p>
-        <p><strong>Budget:</strong> ₹{{ r.budget }}</p>
-        <p><strong>Venue Type:</strong> {{ r.venue_type }}</p>
-        <p><strong>Religious Affiliation:</strong> {{ r.religious_affiliation }}</p>
-        <p><strong>Special Requests:</strong> {{ r.special_requests|default:"None" }}</p>
 
-        {% if r.extra_requisitions %}
-        <hr>
-        <h6>Extra Requisitions</h6>
-        <div class="row">
+        <h5 class="mb-3">Visitor Information</h5>
+        <div class="row mb-3">
           <div class="col-md-6">
-            <p><strong>Tables:</strong> {{ r.extra_requisitions.tables }} (₹{{ r.extra_requisitions.tables_price }} each)</p>
-            <p><strong>Chairs:</strong> {{ r.extra_requisitions.chairs }} (₹{{ r.extra_requisitions.chairs_price }} each)</p>
-            <p><strong>Balloons:</strong> {{ r.extra_requisitions.baloons }} (₹{{ r.extra_requisitions.baloons_price }} each)</p>
-            <p><strong>Garlands:</strong> {{ r.extra_requisitions.garlands }} (₹{{ r.extra_requisitions.garlands_price }} each)</p>
+            <p><span class="info-label">Name:</span> {{ requisition.visitor_name }}</p>
+            <p><span class="info-label">Phone:</span> {{ requisition.phone }}</p>
+            <p><span class="info-label">Email:</span> {{ requisition.email }}</p>
+            <p><span class="info-label">Number of People:</span> {{ requisition.number_of_people }}</p>
           </div>
           <div class="col-md-6">
-            <p><strong>Decor:</strong> {{ r.extra_requisitions.decor }} (₹{{ r.extra_requisitions.decor_price }})</p>
-            <p><strong>Band:</strong> {{ r.extra_requisitions.band }} (₹{{ r.extra_requisitions.band_price }})</p>
-            <p><strong>DJ:</strong> {{ r.extra_requisitions.DJ }} (₹{{ r.extra_requisitions.DJ_price }})</p>
-            <p><strong>Stereo:</strong> {% if r.extra_requisitions.stereo %}Yes (₹{{ r.extra_requisitions.stereo_price }}){% else %}No{% endif %}</p>
-            <p><strong>Lighting:</strong> {% if r.extra_requisitions.lighting %}Yes (₹{{ r.extra_requisitions.lighting_price }}){% else %}No{% endif %}</p>
-            <p><strong>Photography:</strong> {% if r.extra_requisitions.photography %}Yes (₹{{ r.extra_requisitions.photography_price }}){% else %}No{% endif %}</p>
-            <p><strong>Videography:</strong> {% if r.extra_requisitions.videography %}Yes (₹{{ r.extra_requisitions.videography_price }}){% else %}No{% endif %}</p>
-            <p><strong>Mic:</strong> {% if r.extra_requisitions.mic %}Yes (₹20){% else %}No{% endif %}</p>
+            <p><span class="info-label">Budget:</span> ₹{{ requisition.budget }}</p>
+            <p><span class="info-label">Venue Type:</span> {{ requisition.venue_type }}</p>
+            <p><span class="info-label">Religious Affiliation:</span> {{ requisition.religious_affiliation }}</p>
+            <p><span class="info-label">Special Requests:</span> {{ requisition.special_requests|default:"None" }}</p>
           </div>
         </div>
-        <hr>
-        <h6>Total Extra Cost: ₹{{ r.extra_requisitions.total_cost }}</h6>
+
+        {% if requisition.extra_requisitions %}
+          <h5 class="mb-3">Extra Requisitions</h5>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <p><span class="info-label">Tables:</span> {{ requisition.extra_requisitions.tables }} (₹{{ requisition.extra_requisitions.tables_price }} each)</p>
+              <p><span class="info-label">Chairs:</span> {{ requisition.extra_requisitions.chairs }} (₹{{ requisition.extra_requisitions.chairs_price }} each)</p>
+              <p><span class="info-label">Balloons:</span> {{ requisition.extra_requisitions.baloons }} (₹{{ requisition.extra_requisitions.baloons_price }} each)</p>
+              <p><span class="info-label">Garlands:</span> {{ requisition.extra_requisitions.garlands }} (₹{{ requisition.extra_requisitions.garlands_price }} each)</p>
+            </div>
+            <div class="col-md-6">
+              <p><span class="info-label">Decor:</span> {{ requisition.extra_requisitions.decor }} (₹{{ requisition.extra_requisitions.decor_price }})</p>
+              <p><span class="info-label">Band:</span> {{ requisition.extra_requisitions.band }} (₹{{ requisition.extra_requisitions.band_price }})</p>
+              <p><span class="info-label">DJ:</span> {{ requisition.extra_requisitions.DJ }} (₹{{ requisition.extra_requisitions.DJ_price }})</p>
+              <p><span class="info-label">Stereo:</span> {% if requisition.extra_requisitions.stereo %}Yes (₹{{ requisition.extra_requisitions.stereo_price }}){% else %}No{% endif %}</p>
+              <p><span class="info-label">Lighting:</span> {% if requisition.extra_requisitions.lighting %}Yes (₹{{ requisition.extra_requisitions.lighting_price }}){% else %}No{% endif %}</p>
+              <p><span class="info-label">Photography:</span> {% if requisition.extra_requisitions.photography %}Yes (₹{{ requisition.extra_requisitions.photography_price }}){% else %}No{% endif %}</p>
+              <p><span class="info-label">Videography:</span> {% if requisition.extra_requisitions.videography %}Yes (₹{{ requisition.extra_requisitions.videography_price }}){% else %}No{% endif %}</p>
+              <p><span class="info-label">Mic:</span> {% if requisition.extra_requisitions.mic %}Yes (₹20){% else %}No{% endif %}</p>
+            </div>
+          </div>
+
+          <h5 class="total-cost mb-3">Total Extra Cost: ₹{{ requisition.extra_requisitions.total_cost }}</h5>
         {% endif %}
+
+        <!-- Proceed to Payment Button -->
+        <div class="text-center mt-4">
+          <button id="pay-button" class="payment-btn"><i class="fas fa-credit-card"></i> Proceed to Payment</button>
+        </div>
+
       </div>
     </div>
-    {% empty %}
-      <p class="text-muted">No requisitions yet.</p>
-    {% endfor %}
 
+    <!-- Razorpay script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+      const payButton = document.getElementById("pay-button");
+      payButton.addEventListener("click", function () {
+        fetch("{% url 'create_payment' requisition.id %}")
+        .then(res => res.json())
+        .then(data => {
+          var options = {
+              "key": data.key, // Razorpay key from backend
+              "amount": data.amount, // in paise
+              "currency": "INR",
+              "name": "{{ requisition.visitor_name }}",
+              "description": "Event Payment for {{ requisition.event.name }}",
+              "order_id": data.order_id,
+              "handler": function (response){
+                  alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
+                  window.location.href = "{% url 'payment_success' requisition.id %}";
+              },
+              "theme": {
+                  "color": "#ff7e5f"
+              }
+          };
+          var rzp1 = new Razorpay(options);
+          rzp1.open();
+        });
+      });
+    </script>
+
+  {% else %}
+    <p class="text-muted">No requisition available for payment.</p>
   {% endif %}
 
 </div>

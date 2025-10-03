@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function() {
             <div class="position-fixed top-50 start-50 translate-middle p-4 bg-white rounded shadow-lg"
                  style="z-index:1050; max-width:400px;">
                 <h5>Welcome!</h5>
-                <form id="visitor-popup-form">
+                <form id="visitor-popup-form" method="POST">
                     <div class="mb-2">
                         <label>First Name</label>
                         <input type="text" name="fname" class="form-control" required>
@@ -25,18 +25,31 @@ document.addEventListener("DOMContentLoaded", function() {
 
         document.getElementById('visitor-popup-form').addEventListener('submit', function(e) {
             e.preventDefault();
+
+            const formData = new FormData(this);
+            const csrftoken = document.body.dataset.csrfToken; // set in <body> from Django
+
+            fetch("/visitor-popup-submit/", {
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    body: formData
+                })
+                .then(res => {
+                    if (res.redirected) {
+                        // Visitor created, session set; reload page to reflect name
+                        window.location.href = res.url;
+                    }
+                });
+
             sessionStorage.setItem('visitor_popup_shown', 'true');
             popup.remove();
         });
     }
 
-    // ===== Carousel Auto Slide =====
+    // ===== Hero Carousel Auto Slide =====
     const heroCarousel = document.querySelector('#heroCarousel');
     if (heroCarousel) {
-        new bootstrap.Carousel(heroCarousel, {
-            interval: 5000,
-            ride: 'carousel'
-        });
+        new bootstrap.Carousel(heroCarousel, { interval: 5000, ride: 'carousel' });
     }
 
     // ===== Venue Map & Selection =====
@@ -52,7 +65,6 @@ document.addEventListener("DOMContentLoaded", function() {
         const inventoryList = document.getElementById('inventoryList');
         const totalAmount = document.getElementById('totalAmount');
 
-        // Parse venue inventory if injected by Django
         let venueInventory = {};
         const inventoryData = document.getElementById("venueInventoryData");
         if (inventoryData) {
@@ -113,7 +125,20 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         });
 
-        // Auto-select first venue
+        // Auto-select first venue if available
         if (venueButtons.length > 0) venueButtons[0].click();
     }
+
+    // ===== Extra: Carousel Click Updates Event Name =====
+    const slides = document.querySelectorAll('#eventsHeroCarousel .carousel-item img');
+    const header = document.getElementById('eventNameHeader');
+    slides.forEach(slide => {
+        slide.addEventListener('click', function() {
+            const name = this.getAttribute('data-event-name');
+            if (name && header) {
+                header.textContent = name + ' - Booking Info';
+            }
+        });
+    });
+
 });

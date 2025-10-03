@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path,include
 from events import views
 from django.conf import settings
 from django.conf.urls.static import static
@@ -14,6 +14,9 @@ urlpatterns = [
     # Visitor popup
     path('visitor-popup-submit/', views.visitor_popup_submit, name='visitor_popup_submit'),
 
+    # Visitor requisitions
+    path('visitor_requisition/', views.visitor_requisition, name='visitor_requisition'),
+
     # Event information & requisition
     path('information/<int:event_id>/', views.information_view, name='information_view'),
 
@@ -27,7 +30,7 @@ urlpatterns = [
     path('extra_requisitions/<int:requisition_id>/', views.extra_requisitions_view, name='extra_requisitions'),
     path('save_extra_requisition/', views.save_extra_requisition, name='save_extra_requisition'),
 
-    # Requisitions list (password protected)
+    # Admin / all requisitions list (password protected)
     path('requisitions/', views.requisitions_list, name='requisitions_list'),
 
     # Static pages
@@ -37,6 +40,13 @@ urlpatterns = [
 
     # Optional: dedicated view for venue inventories
     path('venue-inventory/', views.venue_view, name='venue_inventory_view'),
+
+    # Payment page for logged-in visitor
+    path('payment/', views.payment_page, name='payment_page'),
+    
+    
+    path("accounts/", include("allauth.urls")),  # allauth URLs
+
 ]
 
 # Serve media and static files during development

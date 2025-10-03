@@ -42,9 +42,9 @@
                     <div class="card shadow-sm card-hover p-3">
                         <h5>{{ item.name }}</h5>
                         {% if item.image %}
-                        <img src="{{ item.image }}" alt="{{ item.name }}" class="service-preview" id="preview-{{ item.id }}">
+                        <img src="{{ item.image.url }}" alt="{{ item.name }}" class="service-preview" id="preview-{{ item.id }}">
                         {% endif %}
-                        <p class="mb-1">Unit Price: ₹<span class="unit-price">{{ item.price }}</span></p>
+                        <p class="mb-1">Unit Price: ₹<span class="unit-price">{{ item.price|default:"0" }}</span></p>
                         <div class="d-flex align-items-center mb-2">
                             <input type="number" min="0" value="{{ item.selected_quantity|default:'0' }}" class="form-control quantity-input me-2" data-item-id="{{ item.id }}">
                             <button type="button" class="btn btn-outline-orange add-requisition-btn" data-item-id="{{ item.id }}">Add</button>
@@ -52,7 +52,7 @@
                         {% if item.services %}
                         <select class="form-select service-select" data-item-id="{{ item.id }}">
                             {% for key, label in item.services.items %}
-                            <option value="{{ key }}">{{ label }}</option>
+                            <option value="{{ key }}" {% if item.selected_service == key %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                         {% endif %}
@@ -74,7 +74,10 @@
                 <hr>
                 <p>Extra Requisitions Cost: ₹<span id="extraAmount">0.00</span></p>
                 <p class="fw-bold">Total Estimated: ₹<span id="totalAmount">{{ selected_venue.discounted_price|default:"0" }}</span></p>
-                <a href="{% url 'information_view' requisition.event.id %}" class="btn btn-outline-orange w-100 mt-3">Back to Booking</a>
+                
+                <!-- Back & Proceed Buttons -->
+                <a href="{% url 'information_view' requisition.event.id %}" class="btn btn-outline-orange w-100 mt-2">Back to Booking</a>
+                <a href="{% url 'payment_page' %}" class="btn btn-success w-100 mt-3">Proceed to Payment</a>
             </div>
         </div>
     </div>
@@ -120,15 +123,11 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             const itemId = this.dataset.itemId;
             const qtyInput = document.querySelector('.quantity-input[data-item-id="'+itemId+'"]');
-            const qty = parseInt(qtyInput.value) || 0;
-            saveItem(itemId, qty);
+            saveItem(itemId, parseInt(qtyInput.value) || 0);
         });
     });
 
-    document.querySelectorAll('.quantity-input').forEach(input => {
-        input.addEventListener('input', updateTotals);
-    });
-
+    document.querySelectorAll('.quantity-input').forEach(input => input.addEventListener('input', updateTotals));
     document.querySelectorAll('.service-select').forEach(select => {
         select.addEventListener('change', function() {
             const itemId = this.dataset.itemId;

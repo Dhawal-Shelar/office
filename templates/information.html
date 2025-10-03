@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_tags %}
 {% block title %}Request Info - {{ event.name }}{% endblock %}
 
 {% block extra_head %}
@@ -30,7 +29,8 @@
 {% block content %}
 <div class="container py-4">
 
-    <!-- HERO CAROUSEL FOR ALL EVENTS -->
+    <!-- HERO CAROUSEL FOR EVENTS -->
+    {% if events %}
     <div id="eventsHeroCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
         <div class="carousel-inner">
             {% for e in events %}
@@ -53,6 +53,7 @@
             <span class="carousel-control-next-icon"></span>
         </button>
     </div>
+    {% endif %}
 
     <div class="row g-4">
         <!-- LEFT: Booking Form -->
@@ -62,7 +63,7 @@
                     <h3 class="mb-0" id="eventNameHeader">{{ event.name }} - Booking Info</h3>
                 </div>
                 <div class="card-body">
-                    <form method="post">
+                    <form method="post" action="{% url 'information_view' event.id %}">
                         {% csrf_token %}
                         <input type="hidden" name="requisition_id" value="{{ requisition.id|default_if_none:'' }}">
                         <input type="hidden" name="visitor_id" value="{{ visitor.id|default_if_none:'' }}">
@@ -102,14 +103,12 @@
                             <textarea name="special_requests" class="form-control" rows="4">{{ requisition.special_requests|default:'' }}</textarea>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Venue Type</label>
-                            <a href="{% url 'venue_view' %}?event_id={{ event.id }}" class="btn btn-outline-orange w-100">
-                                Choose / Change Venue
-                            </a>
-                        </div>
-
-                        <button type="submit" class="btn btn-outline-orange w-100">Submit Request</button>
+                        <!-- Continue to Venue Selection Button -->
+                        {% if requisition.id %}
+                        <a href="{% url 'venue_view' %}?requisition_id={{ requisition.id }}" class="btn btn-success w-100">
+                            Continue to Venue Selection
+                        </a>
+                        {% endif %}
                     </form>
                 </div>
             </div>
@@ -125,7 +124,7 @@
                     <div class="ratio ratio-16x9">
                         <iframe 
                             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.184052376362!2d-73.98761492453416!3d40.75831467138828!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25855b8fb3083%3A0xa0f9aef176042a5c!2sGrand%20Hyatt%20New%20York!5e0!3m2!1sen!2sus!4v1700000000000" 
-                            allowfullscreen="" 
+                            allowfullscreen 
                             loading="lazy">
                         </iframe>
                     </div>
@@ -136,7 +135,6 @@
     </div>
 </div>
 
-<!-- JS to update event name when carousel slide clicked -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const slides = document.querySelectorAll('#eventsHeroCarousel .carousel-item img');

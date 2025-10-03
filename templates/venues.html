@@ -18,44 +18,40 @@
 {% endblock %}
 
 {% block content %}
-
-<!-- ===== Carousel ===== -->
-{% if venues %}
-<div id="venueCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
-    <div class="carousel-inner">
-        {% for venue in venues %}
-        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-            {% if venue.image %}
-            <img src="{{ venue.image.url }}" class="d-block w-100" style="height:250px; object-fit:cover;">
-            {% else %}
-            <img src="{% static 'images/placeholder.jpg' %}" class="d-block w-100" style="height:250px; object-fit:cover;">
-            {% endif %}
-            <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-2">
-                <h5>{{ venue.name }}</h5>
-                <p>{{ venue.location }}{% if venue.area %}, {{ venue.area }}{% endif %}</p>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    <button class="carousel-control-prev" type="button" data-bs-target="#venueCarousel" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Previous</span>
-    </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#venueCarousel" data-bs-slide="next">
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Next</span>
-    </button>
-</div>
-{% endif %}
-
-<!--Search Bar-->
 <div class="container-fluid py-4">
+
+    <!-- Carousel -->
+    {% if venues %}
+    <div id="venueCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            {% for venue in venues %}
+            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                {% if venue.image %}
+                <img src="{{ venue.image.url }}" class="d-block w-100" style="height:250px; object-fit:cover;">
+                {% else %}
+                <img src="{% static 'images/placeholder.jpg' %}" class="d-block w-100" style="height:250px; object-fit:cover;">
+                {% endif %}
+                <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-2">
+                    <h5>{{ venue.name }}</h5>
+                    <p>{{ venue.location }}{% if venue.area %}, {{ venue.area }}{% endif %}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#venueCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#venueCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Search Bar -->
     <div class="row mb-4">
         <div class="col-lg-8">
             <form method="get" class="d-flex">
-                <input type="text" name="q" class="form-control me-2"
-                       placeholder="Search by venue name, city, or area"
-                       value="{{ request.GET.q|default:'' }}">
+                <input type="text" name="q" class="form-control me-2" placeholder="Search by venue name, city, or area" value="{{ request.GET.q|default:'' }}">
                 <button type="submit" class="btn btn-outline-orange">Search</button>
             </form>
         </div>
@@ -77,12 +73,8 @@
                             <h5 class="card-title">{{ venue.name }}</h5>
                             <p class="card-text">{{ venue.location }}{% if venue.area %}, {{ venue.area }}{% endif %}</p>
                             <p class="mb-1">
-                                <span class="text-muted text-decoration-line-through">
-                                    ₹{{ venue.old_price|default:"0" }}
-                                </span>
-                                <span class="fw-bold text-success ms-2">
-                                    ₹{{ venue.discounted_price|default:"0" }}
-                                </span>
+                                <span class="text-muted text-decoration-line-through">₹{{ venue.old_price|default:"0" }}</span>
+                                <span class="fw-bold text-success ms-2">₹{{ venue.discounted_price|default:"0" }}</span>
                             </p>
 
                             <!-- Select Venue Button -->
@@ -151,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let marker = L.marker([20.5937, 78.9629]).addTo(map);
     {% endif %}
 
-    // AJAX select venue
+    // AJAX select venue and redirect
     document.querySelectorAll('.select-venue-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const venueId = this.dataset.venueId;
@@ -180,5 +172,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
 {% endblock %}

@@ -14,7 +14,10 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-import os
+import os 
+
+import random
+import string
 
 
 # Quick-start development settings - unsuitable for production
@@ -39,7 +42,17 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'events',
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
 ]
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",  # default
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -49,7 +62,17 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
+
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+SITE_ID = 1
+
+LOGIN_REDIRECT_URL = "/payment/"   # after login go home
+LOGOUT_REDIRECT_URL = "/"  # after logout
+
 
 ROOT_URLCONF = 'core.urls'
 
@@ -136,3 +159,23 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+
+
+
+
+
+def generate_unique_username(request, sociallogin):
+    # Get base username from social account
+    base_username = sociallogin.user.username or sociallogin.user.email.split('@')[0]
+    
+    # Append random suffix until it’s unique
+    while True:
+        suffix = ''.join(random.choices(string.digits, k=4))
+        username = f"{base_username}_{suffix}"
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        if not User.objects.filter(username=username).exists():
+            return username
+
+ACCOUNT_USERNAME_GENERATOR = 'core.settings.generate_unique_username'

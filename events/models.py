@@ -19,6 +19,7 @@ class Event(models.Model):
 class Visitor(models.Model):
     fname = models.CharField("Full Name", max_length=255, default="Unknown")
     mobile = models.CharField("Mobile Number", max_length=20, default="Unknown")
+    email = models.EmailField("Email Address", max_length=255, default="Unknown")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
