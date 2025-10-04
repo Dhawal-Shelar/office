@@ -216,3 +216,71 @@ main {
 .card.bg-light-orange:hover {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
+
+
+/*
+ * Full-screen Fixed Background Image Layer
+ */
+
+.background-image {
+    /* *** UPDATE THIS PATH TO YOUR IMAGE LOCATION *** */
+    background-image: url("{% static 'images/wallpaper_bg.png' %}");
+    background-size: cover;
+    background-position: center center;
+    background-attachment: fixed;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    /* Puts it behind everything else */
+    /* Optional: Add a subtle overlay for better text contrast */
+    content: '';
+    display: block;
+    background-color: rgba(0, 0, 0, 0.2);
+    /* 20% opaque black overlay */
+}
+
+
+/* * Wrapper for all foreground content 
+ * Ensures content sits above the background and enables scrolling
+ */
+
+.content-wrapper {
+    min-height: 100vh;
+    /* Ensures it covers the screen for the effect to work */
+    position: relative;
+    z-index: 1;
+    /* Puts content above the background layer */
+}
+
+
+/*
+ * Main Content Area Styling for Readability
+ * Gives the block content a semi-transparent white background so text pops out.
+ */
+
+main {
+    background-color: rgba(255, 255, 255, 0.9);
+    /* 90% opaque white background for readability */
+    border-radius: 8px;
+    padding: 20px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    /* Soft shadow for depth */
+    margin-top: 1rem;
+    /* Adds some space below the navbar */
+}
+
+
+/* Adjust Sidebar and Navbar Opacity for visual blending */
+
+.sidebar {
+    /* Semi-transparent dark background for the sidebar */
+    background-color: rgba(33, 37, 41, 0.9) !important;
+}
+
+.bg-gradient-orange {
+    /* Slightly reduce navbar opacity */
+    opacity: 0.98;
+}

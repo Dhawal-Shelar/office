@@ -11,10 +11,10 @@
     <div class="row g-4">
         {% for req in requisitions %}
         <div class="col-md-6">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm h-100 card-hover">
                 <div class="card-body d-flex flex-column">
                     <h5 class="card-title">{{ req.event.name }}</h5>
-                    <p class="card-text mb-1"><strong>Number of People:</strong> {{ req.number_of_people }}</p>
+                    <p class="card-text mb-1"><strong>Number of People:</strong> {{ req.number_of_people|default:"N/A" }}</p>
                     <p class="card-text mb-1"><strong>Venue:</strong> {{ req.venue_type|default:"Not Selected" }}</p>
                     <p class="card-text mb-1"><strong>Budget:</strong> {{ req.budget|default:"N/A" }}</p>
 
@@ -22,23 +22,23 @@
                     <hr>
                     <h6 class="mb-2">Extra Requisitions:</h6>
                     <ul class="list-unstyled mb-3">
-                        <li><strong>Tables:</strong> {{ req.extra_requisitions.tables }}</li>
-                        <li><strong>Chairs:</strong> {{ req.extra_requisitions.chairs }}</li>
-                        <li><strong>Balloons:</strong> {{ req.extra_requisitions.baloons }}</li>
-                        <li><strong>Garlands:</strong> {{ req.extra_requisitions.garlands }}</li>
+                        <li><strong>Tables:</strong> {{ req.extra_requisitions.tables|default:"0" }}</li>
+                        <li><strong>Chairs:</strong> {{ req.extra_requisitions.chairs|default:"0" }}</li>
+                        <li><strong>Balloons:</strong> {{ req.extra_requisitions.baloons|default:"0" }}</li>
+                        <li><strong>Garlands:</strong> {{ req.extra_requisitions.garlands|default:"0" }}</li>
                         <li><strong>Decor:</strong> {{ req.extra_requisitions.decor|default:"None" }}</li>
                         <li><strong>Band:</strong> {{ req.extra_requisitions.band|default:"None" }}</li>
                         <li><strong>DJ:</strong> {{ req.extra_requisitions.DJ|default:"None" }}</li>
-                        <li><strong>Stereo:</strong> {{ req.extra_requisitions.stereo|default:"None" }}</li>
-                        <li><strong>Lighting:</strong> {{ req.extra_requisitions.lighting|default:"None" }}</li>
-                        <li><strong>Photography:</strong> {{ req.extra_requisitions.photography|default:"None" }}</li>
-                        <li><strong>Videography:</strong> {{ req.extra_requisitions.videography|default:"None" }}</li>
-                        <li><strong>Mic:</strong> {{ req.extra_requisitions.mic|default:"None" }}</li>
+                        <li><strong>Stereo:</strong> {{ req.extra_requisitions.stereo|yesno:"Yes,No" }}</li>
+                        <li><strong>Lighting:</strong> {{ req.extra_requisitions.lighting|yesno:"Yes,No" }}</li>
+                        <li><strong>Photography:</strong> {{ req.extra_requisitions.photography|yesno:"Yes,No" }}</li>
+                        <li><strong>Videography:</strong> {{ req.extra_requisitions.videography|yesno:"Yes,No" }}</li>
+                        <li><strong>Mic:</strong> {{ req.extra_requisitions.mic|yesno:"Yes,No" }}</li>
                     </ul>
                     {% endif %}
 
                     <div class="mt-auto">
-                        <a href="{% url 'payment_page' req.id %}" class="btn btn-primary w-100">Proceed to Payment</a>
+                        <a href="{% url 'payment_page' req.id %}" class="btn btn-success w-100">Proceed to Payment</a>
                     </div>
                 </div>
             </div>
@@ -47,8 +47,18 @@
     </div>
     {% else %}
     <div class="alert alert-info text-center" role="alert">
-        No requisitions yet. Go back and request info for an event!
+        You have no requisitions yet. Go back and request info for an event!
     </div>
     {% endif %}
 </div>
+
+<style>
+.card-hover {
+    transition: all 0.3s ease;
+}
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+</style>
 {% endblock %}

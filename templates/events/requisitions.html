@@ -1,37 +1,16 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Payment – Travelsphere{% endblock %}
+{% block title %}Payment – {{ requisition.event.name if requisition else "Travelsphere" }}{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-  .card-hover {
-      transition: all 0.3s ease;
-  }
-  .card-hover:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-  }
-  .payment-btn {
-      background: linear-gradient(90deg, #ff7e5f, #feb47b);
-      border: none;
-      color: white;
-      font-weight: bold;
-      padding: 12px 25px;
-      border-radius: 50px;
-      transition: 0.3s;
-  }
-  .payment-btn:hover {
-      transform: scale(1.05);
-  }
-  .info-label {
-      font-weight: 600;
-  }
-  .total-cost {
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #ff5722;
-  }
+  .card-hover { transition: all 0.3s ease; }
+  .card-hover:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
+  .payment-btn { background: linear-gradient(90deg, #ff7e5f, #feb47b); border: none; color: white; font-weight: bold; padding: 12px 25px; border-radius: 50px; transition: 0.3s; }
+  .payment-btn:hover { transform: scale(1.05); }
+  .info-label { font-weight: 600; }
+  .total-cost { font-size: 1.2rem; font-weight: bold; color: #ff5722; }
 </style>
 {% endblock %}
 
@@ -99,25 +78,29 @@
     <script>
       const payButton = document.getElementById("pay-button");
       payButton.addEventListener("click", function () {
-        fetch("{% url 'create_payment' requisition.id %}")
+        fetch("{% url 'events:create_payment' requisition.id %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ requisition_id: "{{ requisition.id }}" })
+        })
         .then(res => res.json())
         .then(data => {
-          var options = {
-              "key": data.key, // Razorpay key from backend
-              "amount": data.amount, // in paise
-              "currency": "INR",
-              "name": "{{ requisition.visitor_name }}",
-              "description": "Event Payment for {{ requisition.event.name }}",
-              "order_id": data.order_id,
-              "handler": function (response){
-                  alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
-                  window.location.href = "{% url 'payment_success' requisition.id %}";
+          const options = {
+              key: data.key,
+              amount: data.amount,
+              currency: "INR",
+              name: "{{ requisition.visitor_name }}",
+              description: "Event Payment for {{ requisition.event.name }}",
+              order_id: data.order_id,
+              handler: function (response){
+                  window.location.href = "{% url 'events:payment_success' requisition.id %}";
               },
-              "theme": {
-                  "color": "#ff7e5f"
-              }
+              theme: { color: "#ff7e5f" }
           };
-          var rzp1 = new Razorpay(options);
+          const rzp1 = new Razorpay(options);
           rzp1.open();
         });
       });

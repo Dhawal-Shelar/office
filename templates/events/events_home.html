@@ -1,11 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_tags %}
 {% block title %}Events Home{% endblock %}
 
 {% block extra_head %}
 <style>
-/* Custom styles for events_home */
 .card-hover:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
@@ -14,9 +12,7 @@
 .bg-gradient-orange {
     background: linear-gradient(90deg, #ff7e5f, #feb47b);
 }
-.carousel-caption {
-    text-align: left;
-}
+.carousel-caption { text-align: left; }
 .btn-outline-orange {
     border-color: #ff7e5f;
     color: #ff7e5f;
@@ -36,14 +32,14 @@
         {% for event in events %}
         <div class="carousel-item {% if forloop.first %}active{% endif %}">
             {% if event.image %}
-            <img src="{{ event.image.url }}" class="d-block w-100" style="height: 450px; object-fit: cover;" alt="{{ event.name }}">
+            <img src="{{ event.image.url }}" class="d-block w-100" style="height:450px; object-fit:cover;" alt="{{ event.name }}">
             {% else %}
-            <img src="{% static 'images/placeholder.jpg' %}" class="d-block w-100" style="height: 450px; object-fit: cover;" alt="Placeholder">
+            <img src="{% static 'images/placeholder.jpg' %}" class="d-block w-100" style="height:450px; object-fit:cover;" alt="Placeholder">
             {% endif %}
             <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 p-3 rounded">
                 <h2 class="fw-bold">{{ event.name }}</h2>
                 <p>{{ event.description|truncatewords:25 }}</p>
-                <a href="{% url 'information_view' event.id %}" class="btn btn-outline-orange btn-lg">Request Info</a>
+                <a href="{% url 'events:information_view' event.id %}" class="btn btn-outline-orange btn-lg">Request Info</a>
             </div>
         </div>
         {% endfor %}
@@ -64,14 +60,14 @@
         <div class="col-md-4">
             <div class="card bg-dark text-white shadow-sm card-hover h-100">
                 {% if event.image %}
-                <img src="{{ event.image.url }}" class="card-img-top" style="height: 220px; object-fit: cover;" alt="{{ event.name }}">
+                <img src="{{ event.image.url }}" class="card-img-top" style="height:220px; object-fit:cover;" alt="{{ event.name }}">
                 {% else %}
-                <img src="{% static 'images/placeholder.jpg' %}" class="card-img-top" style="height: 220px; object-fit: cover;" alt="Placeholder">
+                <img src="{% static 'images/placeholder.jpg' %}" class="card-img-top" style="height:220px; object-fit:cover;" alt="Placeholder">
                 {% endif %}
                 <div class="card-body d-flex flex-column">
                     <h5 class="card-title">{{ event.name }}</h5>
                     <p class="card-text">{{ event.description|truncatewords:20 }}</p>
-                    <a href="{% url 'information_view' event.id %}" class="btn btn-outline-orange mt-auto">Request Info</a>
+                    <a href="{% url 'events:information_view' event.id %}" class="btn btn-outline-orange mt-auto">Request Info</a>
                 </div>
             </div>
         </div>
@@ -79,8 +75,8 @@
     </div>
 </div>
 
-<!-- VISITOR POPUP -->
 {% if show_popup %}
+<!-- VISITOR MODAL -->
 <div class="modal fade" id="visitorModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
@@ -88,7 +84,7 @@
                 <h5 class="modal-title">Welcome! Enter Your Name & Mobile</h5>
             </div>
             <div class="modal-body">
-                <form method="post" action="{% url 'visitor_popup_submit' %}">
+                <form method="post" action="{% url 'events:visitor_popup_submit' %}">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label class="form-label">Name</label>
@@ -104,12 +100,17 @@
         </div>
     </div>
 </div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var visitorModal = new bootstrap.Modal(document.getElementById('visitorModal'));
-    visitorModal.show();
-});
-</script>
+
+
 {% endif %}
 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    {% if show_popup %}
+    const visitorModalEl = document.getElementById('visitorModal');
+    const visitorModal = new bootstrap.Modal(visitorModalEl);
+    visitorModal.show();
+    {% endif %}
+});
+</script>
 {% endblock %}

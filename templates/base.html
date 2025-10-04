@@ -1,5 +1,4 @@
 {% load static %}
-{% load custom_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,7 +14,6 @@
 <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
 <style>
-/* Hamburger Right-to-Left animation */
 .navbar-toggler-icon {
   position: relative;
   width: 30px;
@@ -46,12 +44,12 @@
 </head>
 <body data-csrf-token="{{ csrf_token }}" 
       data-requisition-id="{{ requisition.id|default:'' }}"
-      data-save-venue-url="{% url 'save_selected_venue' %}">
+      {% if save_venue_url %}data-save-venue-url="{{ save_venue_url }}"{% endif %}>
 
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-gradient-orange sticky-top shadow-sm">
   <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="{% url 'events_home' %}">
+    <a class="navbar-brand fw-bold" href="{% url 'events:events_home' %}">
       <i class="bi bi-compass"></i> Travelsphere
     </a>
     <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -59,10 +57,10 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="{% url 'events_home' %}"><i class="bi bi-calendar-event"></i> Events</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'about' %}"><i class="bi bi-info-circle"></i> About</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'services' %}"><i class="bi bi-gear"></i> Services</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'contact' %}"><i class="bi bi-envelope"></i> Contact</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'events:events_home' %}"><i class="bi bi-calendar-event"></i> Events</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'events:about' %}"><i class="bi bi-info-circle"></i> About</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'events:services' %}"><i class="bi bi-gear"></i> Services</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'events:contact' %}"><i class="bi bi-envelope"></i> Contact</a></li>
 
         {% if user.is_authenticated %}
           <li class="nav-item"><a class="nav-link" href="{% url 'account_logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
@@ -88,18 +86,17 @@
             <ul class="collapse list-unstyled ms-3" id="eventDropdown">
               {% if events %}
                 {% for event in events %}
-                  <li><a class="nav-link text-light" href="{% url 'information_view' event.id %}">{{ event.name }}</a></li>
+                  <li><a class="nav-link text-light" href="{% url 'events:information_view' event.id %}">{{ event.name }}</a></li>
                 {% endfor %}
               {% else %}
                 <li class="nav-link text-light">No events available</li>
               {% endif %}
             </ul>
           </li>
-          <li class="nav-item"><a class="nav-link text-white" href="{% url 'about' %}"><i class="bi bi-info-circle"></i> About</a></li>
-          <li class="nav-item"><a class="nav-link text-white" href="{% url 'services' %}"><i class="bi bi-gear"></i> Services</a></li>
-          <li class="nav-item"><a class="nav-link text-white" href="{% url 'contact' %}"><i class="bi bi-envelope"></i> Contact</a></li>
+          <li class="nav-item"><a class="nav-link text-white" href="{% url 'events:about' %}"><i class="bi bi-info-circle"></i> About</a></li>
+          <li class="nav-item"><a class="nav-link text-white" href="{% url 'events:services' %}"><i class="bi bi-gear"></i> Services</a></li>
+          <li class="nav-item"><a class="nav-link text-white" href="{% url 'events:contact' %}"><i class="bi bi-envelope"></i> Contact</a></li>
 
-          <!-- Auth Links in Sidebar -->
           {% if user.is_authenticated %}
             <li class="nav-item mt-3"><a class="nav-link text-white" href="{% url 'account_logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
           {% else %}
@@ -124,7 +121,6 @@
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Custom JS -->
 <script src="{% static 'js/script.js' %}"></script>
 {% block extra_js %}{% endblock %}
 </body>

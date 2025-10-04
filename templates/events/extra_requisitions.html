@@ -76,8 +76,8 @@
                 <p class="fw-bold">Total Estimated: ₹<span id="totalAmount">{{ selected_venue.discounted_price|default:"0" }}</span></p>
                 
                 <!-- Back & Proceed Buttons -->
-                <a href="{% url 'information_view' requisition.event.id %}" class="btn btn-outline-orange w-100 mt-2">Back to Booking</a>
-                <a href="{% url 'payment_page' %}" class="btn btn-success w-100 mt-3">Proceed to Payment</a>
+                <a href="{% url 'events:information_view' requisition.event.id %}" class="btn btn-outline-orange w-100 mt-2">Back to Booking</a>
+                <a href="{% url 'events:payment_page' %}" class="btn btn-success w-100 mt-3">Proceed to Payment</a>
             </div>
         </div>
     </div>
@@ -108,10 +108,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const serviceSelect = document.querySelector('.service-select[data-item-id="'+itemId+'"]');
         const serviceOption = serviceSelect ? serviceSelect.value : null;
 
-        fetch("{% url 'save_extra_requisition' %}", {
+        fetch("{% url 'events:save_extra_requisition' %}", {
             method: 'POST',
-            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
-            body: JSON.stringify({requisition_id: requisitionId, item_id: itemId, quantity: quantity, service_option: serviceOption})
+            headers: {
+                'Content-Type': 'application/json', 
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                requisition_id: requisitionId,
+                item_id: itemId,
+                quantity: quantity,
+                service_option: serviceOption
+            })
         }).then(res => res.json()).then(data => {
             if(data.status === 'success'){
                 updateTotals();

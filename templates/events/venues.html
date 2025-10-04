@@ -14,38 +14,13 @@
 .btn-outline-orange:hover { background-color: #ff7e5f; color: #fff; }
 .text-decoration-line-through { text-decoration: line-through; }
 #venueMap { height: 400px; width: 100%; }
+.card-body { display: flex; flex-direction: column; }
+.selected-venue { border: 2px solid #ff7e5f; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
-
-    <!-- Carousel -->
-    {% if venues %}
-    <div id="venueCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
-        <div class="carousel-inner">
-            {% for venue in venues %}
-            <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                {% if venue.image %}
-                <img src="{{ venue.image.url }}" class="d-block w-100" style="height:250px; object-fit:cover;">
-                {% else %}
-                <img src="{% static 'images/placeholder.jpg' %}" class="d-block w-100" style="height:250px; object-fit:cover;">
-                {% endif %}
-                <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded p-2">
-                    <h5>{{ venue.name }}</h5>
-                    <p>{{ venue.location }}{% if venue.area %}, {{ venue.area }}{% endif %}</p>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#venueCarousel" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon"></span>
-        </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#venueCarousel" data-bs-slide="next">
-            <span class="carousel-control-next-icon"></span>
-        </button>
-    </div>
-    {% endif %}
 
     <!-- Search Bar -->
     <div class="row mb-4">
@@ -63,13 +38,13 @@
             <div class="row g-4">
                 {% for venue in venues %}
                 <div class="col-md-4">
-                    <div class="card shadow-sm h-100 card-hover">
+                    <div class="card shadow-sm h-100 card-hover {% if requisition.selected_venue and requisition.selected_venue.id == venue.id %}selected-venue{% endif %}">
                         {% if venue.image %}
                         <img src="{{ venue.image.url }}" class="card-img-top" style="height:150px; object-fit:cover;">
                         {% else %}
                         <img src="{% static 'images/placeholder.jpg' %}" class="card-img-top" style="height:150px; object-fit:cover;">
                         {% endif %}
-                        <div class="card-body">
+                        <div class="card-body d-flex flex-column">
                             <h5 class="card-title">{{ venue.name }}</h5>
                             <p class="card-text">{{ venue.location }}{% if venue.area %}, {{ venue.area }}{% endif %}</p>
                             <p class="mb-1">
@@ -77,10 +52,11 @@
                                 <span class="fw-bold text-success ms-2">₹{{ venue.discounted_price|default:"0" }}</span>
                             </p>
 
-                            <!-- Select Venue Button -->
-                            <button class="btn btn-outline-orange w-100 select-venue-btn"
+                            <button class="btn btn-outline-orange w-100 mt-auto select-venue-btn"
                                 data-venue-id="{{ venue.id }}"
-                                data-requisition-id="{{ requisition.id }}">
+                                data-requisition-id="{{ requisition.id }}"
+                                data-lat="{{ venue.lat|default:'20.5937' }}"
+                                data-lng="{{ venue.lng|default:'78.9629' }}">
                                 Select Venue
                             </button>
                         </div>
@@ -95,7 +71,7 @@
         <!-- RIGHT: Selected Venue + Map -->
         <div class="col-lg-4">
             <h4 class="mb-3">Selected Venue Details</h4>
-            <div class="card shadow-sm p-3 mb-3">
+            <div class="card shadow-sm p-3 mb-3" id="selectedVenueCard">
                 <p class="mb-2">Venue: 
                     {% if requisition.selected_venue %}
                         {{ requisition.selected_venue.name }}
@@ -111,11 +87,12 @@
                     {% endif %}
                 </p>
 
-                {% if requisition.selected_venue %}
-                <a href="{% url 'extra_requisitions' requisition.id %}" class="btn btn-success w-100 mt-3">
-                    Go to Extra Requisitions
+                <!-- Always use <a> tag -->
+                <a href="{% if requisition.selected_venue %}{% url 'events:extra_requisitions' requisition.id %}{% else %}#{% endif %}" 
+                   class="btn {% if requisition.selected_venue %}btn-success{% else %}btn-secondary{% endif %} w-100 mt-3" 
+                   id="gotoExtrasBtn" {% if not requisition.selected_venue %}aria-disabled="true"{% endif %}>
+                   Go to Extra Requisitions
                 </a>
-                {% endif %}
             </div>
 
             <div class="card shadow-sm card-hover">
@@ -136,20 +113,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const map = L.map('venueMap').setView([20.5937, 78.9629], 5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
+    let marker;
+    function setMarker(lat, lng) {
+        if(marker) map.removeLayer(marker);
+        marker = L.marker([lat, lng]).addTo(map);
+        map.setView([lat, lng], 12);
+    }
+
     {% if requisition.selected_venue and requisition.selected_venue.lat and requisition.selected_venue.lng %}
-    let marker = L.marker([{{ requisition.selected_venue.lat }}, {{ requisition.selected_venue.lng }}]).addTo(map);
-    map.setView([{{ requisition.selected_venue.lat }}, {{ requisition.selected_venue.lng }}], 12);
+        setMarker({{ requisition.selected_venue.lat }}, {{ requisition.selected_venue.lng }});
     {% else %}
-    let marker = L.marker([20.5937, 78.9629]).addTo(map);
+        setMarker(20.5937, 78.9629);
     {% endif %}
 
-    // AJAX select venue and redirect
+    const selectedVenueCard = document.getElementById('selectedVenueCard');
+    const gotoExtrasBtn = document.getElementById('gotoExtrasBtn');
+
     document.querySelectorAll('.select-venue-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const venueId = this.dataset.venueId;
             const requisitionId = this.dataset.requisitionId;
+            const lat = parseFloat(this.dataset.lat);
+            const lng = parseFloat(this.dataset.lng);
 
-            fetch("{% url 'save_selected_venue' %}", {
+            document.querySelectorAll('.select-venue-btn').forEach(b => b.disabled = true);
+
+            fetch("{% url 'events:save_selected_venue' %}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -159,14 +148,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }).then(res => res.json())
             .then(data => {
                 if(data.status === 'success'){
-                    // Redirect to extra requisitions page
-                    window.location.href = "{% url 'extra_requisitions' requisition.id %}";
+                    setMarker(lat, lng);
+
+                    // Highlight selected card
+                    document.querySelectorAll('.card').forEach(c => c.classList.remove('selected-venue'));
+                    btn.closest('.card').classList.add('selected-venue');
+
+                    // Update selected venue details
+                    selectedVenueCard.querySelector('p:first-child').textContent = "Venue: " + data.venue_name;
+                    selectedVenueCard.querySelector('p:nth-child(2)').textContent = "Base Price: ₹" + data.discounted_price;
+
+                    // Enable "Go to Extra Requisitions" button dynamically
+                    if(gotoExtrasBtn){
+                        gotoExtrasBtn.href = "/events/extra_requisitions/" + requisitionId + "/";
+                        gotoExtrasBtn.classList.remove('btn-secondary');
+                        gotoExtrasBtn.classList.add('btn-success');
+                        gotoExtrasBtn.removeAttribute('aria-disabled');
+                    }
                 } else {
                     alert('Error selecting venue: ' + data.message);
                 }
             }).catch(err => {
                 console.error(err);
                 alert('Unexpected error occurred!');
+            }).finally(() => {
+                document.querySelectorAll('.select-venue-btn').forEach(b => b.disabled = false);
             });
         });
     });
